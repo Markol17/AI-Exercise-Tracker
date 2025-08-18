@@ -11,7 +11,7 @@
 		"@orpc/client": "^1.8.1",
 		"@orpc/server": "^1.8.1",
 		"@orpc/tanstack-query": "^1.8.1",
-		"@vero/db": "^1.0.0",
+		"@vero/db": "*",
 		"drizzle-orm": "^0.44.4",
 		"nanoid": "^5.0.0",
 		"zod": "^3.22.0"
