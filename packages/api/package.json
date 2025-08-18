@@ -1,0 +1,21 @@
+{
+	"name": "@vero/api",
+	"version": "1.0.0",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch"
+	},
+	"dependencies": {
+		"@orpc/client": "^1.8.1",
+		"@orpc/server": "^1.8.1",
+		"@vero/db": "^1.0.0",
+		"drizzle-orm": "^0.29.0",
+		"nanoid": "^5.0.0",
+		"zod": "^3.22.0"
+	},
+	"devDependencies": {
+		"typescript": "^5.3.0"
+	}
+}

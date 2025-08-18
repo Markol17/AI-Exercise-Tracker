@@ -1,0 +1,22 @@
+name: vero
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - opencv
+  - pillow
+  - pip
+  - pip:
+    - torch>=2.0.0
+    - torchvision>=0.15.0
+    - ultralytics>=8.0.0
+    - mediapipe>=0.10.0
+    - scipy
+    - requests
+    - websocket-client
+    - python-dotenv
+    - face-recognition
+    - dlib

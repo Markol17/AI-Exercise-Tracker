@@ -1,0 +1,27 @@
+{
+	"name": "vero-wellness",
+	"version": "1.0.0",
+	"private": true,
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"scripts": {
+		"dev": "npm run dev:server & npm run dev:perception",
+		"dev:server": "npm run dev --workspace=@vero/server",
+		"dev:mobile": "npm run start --workspace=@vero/mobile",
+		"dev:perception": "cd apps/perception && conda activate vero && python main.py",
+		"build": "npm run build --workspaces",
+		"build:tsc": "tsc --build packages/api packages/auth packages/db apps/server apps/mobile",
+		"type-check": "tsc --build --dry packages/api packages/auth packages/db apps/server apps/mobile",
+		"db:up": "docker-compose up -d postgres",
+		"db:down": "docker-compose down",
+		"db:migrate": "npm run db:migrate --workspace=@vero/db",
+		"db:generate": "npm run db:generate --workspace=@vero/db",
+		"db:studio": "npm run db:studio --workspace=@vero/db"
+	},
+	"devDependencies": {
+		"@types/node": "^20.0.0",
+		"typescript": "^5.3.0"
+	}
+}

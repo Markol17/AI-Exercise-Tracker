@@ -1,0 +1,31 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"lib": ["ES2022"],
+		"outDir": "./dist",
+		"rootDir": "./src",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"composite": true,
+		"baseUrl": ".",
+		"paths": {
+			"@vero/api": ["../../packages/api/src"],
+			"@vero/api/*": ["../../packages/api/src/*"],
+			"@vero/auth": ["../../packages/auth/src"],
+			"@vero/auth/*": ["../../packages/auth/src/*"],
+			"@vero/db": ["../../packages/db/src"],
+			"@vero/db/*": ["../../packages/db/src/*"]
+		}
+	},
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", "dist"],
+	"references": [{ "path": "../../packages/api" }, { "path": "../../packages/auth" }, { "path": "../../packages/db" }]
+}
