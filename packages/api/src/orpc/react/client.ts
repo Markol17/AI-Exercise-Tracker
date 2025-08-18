@@ -18,4 +18,4 @@ const getApiUrl = () => {
 };
 
 export const apiClient = createAPIClient<AppRouter>(getApiUrl());
-export const reactQueryClient = createTanstackQueryUtils(apiClient);
+export const reactQueryApiClient = createTanstackQueryUtils(apiClient);

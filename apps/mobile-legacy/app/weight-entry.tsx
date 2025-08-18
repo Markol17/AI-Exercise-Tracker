@@ -1,7 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useRecordWeight } from '../src/hooks/api';
 
 export default function WeightEntryScreen() {
 	const { sessionId, exercise, setNumber } = useLocalSearchParams();
