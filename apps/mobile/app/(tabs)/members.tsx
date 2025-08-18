@@ -1,16 +1,14 @@
-import type { Member } from '@vero/api/types/core';
+import { useCreateMember, useEnrollMember, useMembers } from '@/hooks/api';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useStore } from '../../../mobile/stores/useStore';
-import { useCreateMember, useEnrollMember, useMembers } from '../../src/hooks/api';
 
 export default function MembersScreen() {
-	const { setCurrentMember } = useStore();
 	const [newMemberName, setNewMemberName] = useState('');
 
 	// Use React Query hooks
-	const { data: members = [], isLoading, error } = useMembers();
+	const { data: membersData, isLoading, error } = useMembers();
+	const members = membersData?.items || [];
 	const createMemberMutation = useCreateMember();
 	const enrollMemberMutation = useEnrollMember();
 
@@ -29,13 +27,13 @@ export default function MembersScreen() {
 		}
 	};
 
-	const selectMember = (member: Member) => {
-		setCurrentMember(member);
-		Alert.alert('Success', `Selected ${member.name}`);
+	const selectMember = (member: any) => {
+		// TODO: Implement member selection state management without Zustand
+		Alert.alert('Member Selected', `Selected ${member.name}`);
 		router.back();
 	};
 
-	const enrollIdentity = (member: Member) => {
+	const enrollIdentity = (member: any) => {
 		router.push(`/enrollment/${member.id}`);
 	};
 

@@ -1,3 +1,4 @@
+import { useRecordWeight } from '@/hooks/api';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -81,6 +82,7 @@ const styles = StyleSheet.create({
 		fontSize: 24,
 		fontWeight: 'bold',
 		marginBottom: 10,
+		color: '#333',
 	},
 	exercise: {
 		fontSize: 20,
@@ -101,6 +103,7 @@ const styles = StyleSheet.create({
 		fontSize: 24,
 		textAlign: 'center',
 		marginBottom: 20,
+		backgroundColor: 'white',
 	},
 	unitSelector: {
 		flexDirection: 'row',

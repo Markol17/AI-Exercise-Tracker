@@ -1,15 +1,17 @@
+import { useSessionEvents } from '@/hooks/api';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useStore } from '../../../mobile/stores/useStore';
-import { useSessionEvents } from '../../src/hooks/api';
 
 export default function SessionScreen() {
-	const { currentSession, currentMember } = useStore();
+	// TODO: Replace with proper state management (not Zustand)
+	const [currentSession, setCurrentSession] = useState<any>(null);
+	const [currentMember, setCurrentMember] = useState<any>(null);
 	const [exercises] = useState(['Squat', 'Bench Press', 'Deadlift', 'Shoulder Press']);
 
 	// Fetch session events using React Query
-	const { data: events = [], isLoading, error } = useSessionEvents(currentSession?.id || '', !!currentSession);
+	const { data: eventsData, isLoading, error } = useSessionEvents(currentSession?.id || '', !!currentSession);
+	const events = eventsData?.items || [];
 
 	const startExerciseSet = (exercise: string) => {
 		const setNumber = events.filter((e: any) => e.metadata?.exercise === exercise).length + 1;
