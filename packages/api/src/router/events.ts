@@ -1,6 +1,5 @@
 import { os } from '@orpc/server';
-import { db } from '@vero/db';
-import { events } from '@vero/db/schema';
+import { db, events } from '@vero/db';
 import { nanoid } from 'nanoid';
 import { eventSchema, getRecentEventsSchema, ingestEventsSchema } from '../orpc/contracts';
 // Note: broadcastEvent will need to be injected or handled by the server

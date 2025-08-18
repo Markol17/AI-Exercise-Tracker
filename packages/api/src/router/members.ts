@@ -1,5 +1,4 @@
-import { db } from '@vero/db/index';
-import { members } from '@vero/db/schema';
+import { db, members } from '@vero/db';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 

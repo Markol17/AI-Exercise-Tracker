@@ -1,6 +1,5 @@
 import { os } from '@orpc/server';
-import { db } from '@vero/db/index';
-import { events, sessions } from '@vero/db/schema';
+import { db, events, sessions } from '@vero/db';
 import { and, desc, eq, gte, isNull, lte } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import {

@@ -1,6 +1,5 @@
 import { os } from '@orpc/server';
-import { db } from '@vero/db/index';
-import { weights } from '@vero/db/schema';
+import { db, weights } from '@vero/db';
 import { and, desc, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getWeightsByMemberSchema, recordWeightSchema, stringIdSchema, updateWeightSchema } from '../orpc/contracts';
