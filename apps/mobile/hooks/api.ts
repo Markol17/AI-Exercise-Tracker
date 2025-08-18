@@ -1,32 +1,19 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useORPCClient } from '../providers/QueryProvider';
-
 // Members API hooks
 export function useMembers() {
-	const client = useORPCClient();
-
-	return useQuery({
-		queryKey: ['members', 'list'],
-		queryFn: async () => {
-			const response = await client.members.list({});
-			return response.items;
-		},
-	});
+	return useQuery(reactQueryClient.members.list.queryOptions({}));
 }
 
 export function useCreateMember() {
-	const client = useORPCClient();
 	const queryClient = useQueryClient();
 
-	return useMutation({
-		mutationFn: async (input: { name: string; email?: string }) => {
-			return await client.members.create(input);
-		},
-		onSuccess: () => {
-			// Invalidate members list to refetch after creating
-			queryClient.invalidateQueries({ queryKey: ['members', 'list'] });
-		},
-	});
+	return useMutation(
+		reactQueryClient.members.create.mutationOptions({
+			onSuccess: () => {
+				// Invalidate members list to refetch after creating
+				queryClient.invalidateQueries({ queryKey: ['members', 'list'] });
+			},
+		})
+	);
 }
 
 export function useEnrollMember() {
