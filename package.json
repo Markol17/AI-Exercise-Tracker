@@ -7,7 +7,7 @@
 		"packages/*"
 	],
 	"scripts": {
-		"dev": "npm run dev:server & npm run dev:perception",
+		"dev": "npm run dev:server & npm run dev:perception & npm run dev:mobile",
 		"dev:server": "npm run dev --workspace=@vero/server",
 		"dev:mobile": "npm run start --workspace=@vero/mobile",
 		"dev:perception": "cd apps/perception && conda activate vero && python main.py",
