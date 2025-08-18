@@ -1,6 +1,6 @@
 import { createTanstackQueryUtils } from '@orpc/tanstack-query';
-import { AppRouter } from 'src/router/root';
-import { createAPIClient } from '..';
+import { AppRouter } from 'src/router';
+import { createAPIClient } from '../orpc';
 
 const DEFAULT_API_URL = 'http://localhost:3000/api';
 

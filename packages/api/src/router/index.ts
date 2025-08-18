@@ -1,3 +1,4 @@
+import { InferRouterInputs, InferRouterOutputs } from '@orpc/server';
 import { eventsRouter } from './events';
 import { healthRouter } from './health';
 import { membersRouter } from './members';
@@ -13,3 +14,5 @@ export const appRouter = {
 };
 
 export type AppRouter = typeof appRouter;
+export type RouterInput = InferRouterInputs<AppRouter>;
+export type RouterOutput = InferRouterOutputs<AppRouter>;

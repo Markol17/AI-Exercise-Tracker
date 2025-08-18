@@ -1,8 +1,8 @@
+import { os } from '@orpc/server';
 import { db } from '@vero/db/index';
 import { events, sessions } from '@vero/db/schema';
 import { and, desc, eq, gte, isNull, lte } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { procedure } from '../orpc';
 import {
 	createSessionSchema,
 	endSessionSchema,
@@ -12,7 +12,7 @@ import {
 } from '../orpc/contracts';
 
 export const sessionsRouter = {
-	create: procedure.input(createSessionSchema).handler(async ({ input }) => {
+	create: os.input(createSessionSchema).handler(async ({ input }) => {
 		const session = await db
 			.insert(sessions)
 			.values({
@@ -25,7 +25,7 @@ export const sessionsRouter = {
 		return session[0];
 	}),
 
-	end: procedure.input(endSessionSchema).handler(async ({ input }) => {
+	end: os.input(endSessionSchema).handler(async ({ input }) => {
 		const updated = await db
 			.update(sessions)
 			.set({
@@ -38,13 +38,13 @@ export const sessionsRouter = {
 		return updated[0];
 	}),
 
-	getById: procedure.input(stringIdSchema).handler(async ({ input }) => {
+	getById: os.input(stringIdSchema).handler(async ({ input }) => {
 		const session = await db.select().from(sessions).where(eq(sessions.id, input)).limit(1);
 
 		return session[0] || null;
 	}),
 
-	getActive: procedure.handler(async () => {
+	getActive: os.handler(async () => {
 		const activeSessions = await db
 			.select()
 			.from(sessions)
@@ -54,7 +54,7 @@ export const sessionsRouter = {
 		return activeSessions;
 	}),
 
-	getByMember: procedure.input(getSessionsByMemberSchema).handler(async ({ input }) => {
+	getByMember: os.input(getSessionsByMemberSchema).handler(async ({ input }) => {
 		const conditions = [eq(sessions.memberId, input.memberId)];
 
 		if (input.startDate) {
@@ -80,7 +80,7 @@ export const sessionsRouter = {
 		};
 	}),
 
-	getSessionEvents: procedure.input(getSessionEventsSchema).handler(async ({ input }) => {
+	getSessionEvents: os.input(getSessionEventsSchema).handler(async ({ input }) => {
 		const conditions = [eq(events.sessionId, input.sessionId)];
 
 		const results = await db

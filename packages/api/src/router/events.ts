@@ -1,12 +1,12 @@
-import { db } from '@vero/db/index';
+import { os } from '@orpc/server';
+import { db } from '@vero/db';
 import { events } from '@vero/db/schema';
 import { nanoid } from 'nanoid';
-import { procedure } from '../orpc';
 import { eventSchema, getRecentEventsSchema, ingestEventsSchema } from '../orpc/contracts';
 // Note: broadcastEvent will need to be injected or handled by the server
 
 export const eventsRouter = {
-	ingest: procedure.input(ingestEventsSchema).handler(async ({ input }) => {
+	ingest: os.input(ingestEventsSchema).handler(async ({ input }) => {
 		if (input.authToken !== process.env.INGESTION_SECRET) {
 			throw new Error('Unauthorized');
 		}
@@ -41,7 +41,7 @@ export const eventsRouter = {
 		};
 	}),
 
-	create: procedure.input(eventSchema).handler(async ({ input }) => {
+	create: os.input(eventSchema).handler(async ({ input }) => {
 		const event = await db
 			.insert(events)
 			.values({
@@ -62,7 +62,7 @@ export const eventsRouter = {
 		return insertedEvent;
 	}),
 
-	getRecent: procedure.input(getRecentEventsSchema).handler(async ({ input }) => {
+	getRecent: os.input(getRecentEventsSchema).handler(async ({ input }) => {
 		const recentEvents = await db.select().from(events).orderBy(events.timestamp).limit(input.limit);
 
 		return recentEvents;

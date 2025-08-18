@@ -1,5 +1,4 @@
-import { RPCHandler } from '@vero/api/orpc';
-import { appRouter } from '@vero/api/router/root';
+import { appRouter, RPCHandler } from '@vero/api';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
 import express from 'express';

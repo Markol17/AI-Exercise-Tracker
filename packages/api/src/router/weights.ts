@@ -1,12 +1,12 @@
+import { os } from '@orpc/server';
 import { db } from '@vero/db/index';
 import { weights } from '@vero/db/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { procedure } from '../orpc';
 import { getWeightsByMemberSchema, recordWeightSchema, stringIdSchema, updateWeightSchema } from '../orpc/contracts';
 
 export const weightsRouter = {
-	record: procedure.input(recordWeightSchema).handler(async ({ input }) => {
+	record: os.input(recordWeightSchema).handler(async ({ input }) => {
 		const weight = await db
 			.insert(weights)
 			.values({
@@ -25,7 +25,7 @@ export const weightsRouter = {
 		return weight[0];
 	}),
 
-	getBySession: procedure.input(stringIdSchema).handler(async ({ input }) => {
+	getBySession: os.input(stringIdSchema).handler(async ({ input }) => {
 		const sessionWeights = await db
 			.select()
 			.from(weights)
@@ -35,7 +35,7 @@ export const weightsRouter = {
 		return sessionWeights;
 	}),
 
-	getByMember: procedure.input(getWeightsByMemberSchema).handler(async ({ input }) => {
+	getByMember: os.input(getWeightsByMemberSchema).handler(async ({ input }) => {
 		const conditions = [eq(weights.memberId, input.memberId)];
 
 		if (input.exercise) {
@@ -58,7 +58,7 @@ export const weightsRouter = {
 		};
 	}),
 
-	update: procedure.input(updateWeightSchema).handler(async ({ input }) => {
+	update: os.input(updateWeightSchema).handler(async ({ input }) => {
 		const { id, ...updateData } = input;
 
 		const updated = await db.update(weights).set(updateData).where(eq(weights.id, id)).returning();

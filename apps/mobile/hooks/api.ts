@@ -41,14 +41,16 @@ export function useEndSession() {
 }
 
 export function useSessionEvents(sessionId: string, enabled = true) {
-	return useQuery(
-		reactQueryApiClient.sessions.getSessionEvents.queryOptions({
-			sessionId,
-			limit: 100,
-			offset: 0,
-			enabled: enabled && !!sessionId,
-		})
-	);
+	return useQuery({
+		...reactQueryApiClient.sessions.getSessionEvents.queryOptions({
+			input: {
+				sessionId,
+				limit: 100,
+				offset: 0,
+			},
+		}),
+		enabled: enabled && !!sessionId,
+	});
 }
 
 // Weights API hooks
@@ -57,7 +59,7 @@ export function useRecordWeight() {
 
 	return useMutation(
 		reactQueryApiClient.weights.record.mutationOptions({
-			onSuccess: (_, variables) => {
+			onSuccess: (_: any, variables: any) => {
 				// Invalidate session events to show the new weight record
 				queryClient.invalidateQueries({
 					queryKey: ['sessions', variables.sessionId, 'events'],
@@ -73,7 +75,7 @@ export function useCreateEvent() {
 
 	return useMutation(
 		reactQueryApiClient.events.create.mutationOptions({
-			onSuccess: (_, variables) => {
+			onSuccess: (_: any, variables: any) => {
 				queryClient.invalidateQueries({
 					queryKey: ['sessions', variables.sessionId, 'events'],
 				});
