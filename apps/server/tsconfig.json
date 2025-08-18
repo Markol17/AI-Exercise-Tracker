@@ -17,15 +17,10 @@
 		"composite": true,
 		"baseUrl": ".",
 		"paths": {
-			"@vero/api": ["../../packages/api/src"],
-			"@vero/api/*": ["../../packages/api/src/*"],
-			"@vero/auth": ["../../packages/auth/src"],
-			"@vero/auth/*": ["../../packages/auth/src/*"],
-			"@vero/db": ["../../packages/db/src"],
-			"@vero/db/*": ["../../packages/db/src/*"]
+			"@/*": ["./src/*"]
 		}
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "dist"],
-	"references": [{ "path": "../../packages/api" }, { "path": "../../packages/auth" }, { "path": "../../packages/db" }]
+	"references": [{ "path": "../../packages/api" }]
 }

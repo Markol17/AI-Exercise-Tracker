@@ -4,14 +4,9 @@
 		"strict": true,
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./*"],
-			"@vero/api": ["../../packages/api/src"],
-			"@vero/api/*": ["../../packages/api/src/*"],
-			"@vero/db": ["../../packages/db/src"],
-			"@vero/db/*": ["../../packages/db/src/*"],
-			"@vero/auth": ["../../packages/auth/src"],
-			"@vero/auth/*": ["../../packages/auth/src/*"]
+			"@/*": ["./*"]
 		}
 	},
-	"include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+	"include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+	"references": [{ "path": "../../packages/api" }, { "path": "../../packages/auth" }]
 }

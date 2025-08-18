@@ -11,9 +11,7 @@
 		"resolveJsonModule": true,
 		"baseUrl": ".",
 		"paths": {
-			"@vero/api": ["../../packages/api/src"],
 			"@vero/api/*": ["../../packages/api/src/*"],
-			"@vero/auth": ["../../packages/auth/src"],
 			"@vero/auth/*": ["../../packages/auth/src/*"]
 		}
 	},
