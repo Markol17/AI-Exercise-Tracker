@@ -10,7 +10,7 @@
 		"dev": "npm run dev:server & npm run dev:perception & npm run dev:mobile",
 		"dev:server": "npm run dev --workspace=@vero/server",
 		"dev:mobile": "npm run start --workspace=@vero/mobile",
-		"dev:perception": "cd apps/perception && conda activate vero && python main.py",
+		"dev:perception": "cd apps/perception && ./run.sh",
 		"build": "npm run build --workspaces",
 		"build:tsc": "tsc --build packages/api packages/auth packages/db apps/server apps/mobile",
 		"type-check": "tsc --build --dry packages/api packages/auth packages/db apps/server apps/mobile",
