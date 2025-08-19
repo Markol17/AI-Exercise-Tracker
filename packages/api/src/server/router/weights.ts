@@ -2,7 +2,12 @@ import { os } from '@orpc/server';
 import { db, weights } from '@vero/db';
 import { and, desc, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { getWeightsByMemberSchema, recordWeightSchema, stringIdSchema, updateWeightSchema } from '../orpc/contracts';
+import {
+	getWeightsByMemberSchema,
+	recordWeightSchema,
+	stringIdSchema,
+	updateWeightSchema,
+} from '../../shared/orpc/contracts';
 
 export const weightsRouter = {
 	record: os.input(recordWeightSchema).handler(async ({ input }) => {

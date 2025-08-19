@@ -9,7 +9,7 @@ import {
 	listMembersSchema,
 	stringIdSchema,
 	updateMemberSchema,
-} from '../orpc/contracts';
+} from '../../shared/orpc/contracts';
 
 export const membersRouter = {
 	create: os.input(createMemberSchema).handler(async ({ input }) => {

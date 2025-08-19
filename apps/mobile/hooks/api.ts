@@ -59,7 +59,7 @@ export function useRecordWeight() {
 
 	return useMutation(
 		reactQueryApiClient.weights.record.mutationOptions({
-			onSuccess: (_: any, variables: any) => {
+			onSuccess: (_, variables) => {
 				// Invalidate session events to show the new weight record
 				queryClient.invalidateQueries({
 					queryKey: ['sessions', variables.sessionId, 'events'],
@@ -75,7 +75,7 @@ export function useCreateEvent() {
 
 	return useMutation(
 		reactQueryApiClient.events.create.mutationOptions({
-			onSuccess: (_: any, variables: any) => {
+			onSuccess: (_, variables) => {
 				queryClient.invalidateQueries({
 					queryKey: ['sessions', variables.sessionId, 'events'],
 				});

@@ -1,7 +1,7 @@
 import { os } from '@orpc/server';
 import { db, events } from '@vero/db';
 import { nanoid } from 'nanoid';
-import { eventSchema, getRecentEventsSchema, ingestEventsSchema } from '../orpc/contracts';
+import { eventSchema, getRecentEventsSchema, ingestEventsSchema } from '../../shared/orpc/contracts';
 // Note: broadcastEvent will need to be injected or handled by the server
 
 export const eventsRouter = {

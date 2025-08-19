@@ -8,7 +8,7 @@ import {
 	getSessionEventsSchema,
 	getSessionsByMemberSchema,
 	stringIdSchema,
-} from '../orpc/contracts';
+} from '../../shared/orpc/contracts';
 
 export const sessionsRouter = {
 	create: os.input(createSessionSchema).handler(async ({ input }) => {
