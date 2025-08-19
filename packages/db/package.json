@@ -12,14 +12,18 @@
 		"db:push": "drizzle-kit push"
 	},
 	"dependencies": {
+		"dotenv": "^16.6.1",
 		"drizzle-orm": "^0.44.4",
 		"nanoid": "^5.0.0",
+		"pg": "^8.16.3",
 		"postgres": "^3.4.0",
 		"zod": "^3.22.0"
 	},
 	"devDependencies": {
 		"@types/node": "^20.0.0",
+		"@types/pg": "^8.15.5",
 		"drizzle-kit": "^0.31.4",
+		"tsx": "^4.20.4",
 		"typescript": "~5.8.3"
 	}
 }

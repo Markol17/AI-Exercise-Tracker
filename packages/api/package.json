@@ -15,6 +15,10 @@
 		"./server": {
 			"types": "./src/server/index.ts",
 			"default": "./src/server/index.ts"
+		},
+		"./shared": {
+			"types": "./src/shared/index.ts",
+			"default": "./src/shared/index.ts"
 		}
 	},
 	"scripts": {
@@ -23,8 +27,11 @@
 	},
 	"dependencies": {
 		"@orpc/client": "^1.8.1",
+		"@orpc/json-schema": "^1.8.1",
+		"@orpc/openapi": "^1.8.1",
 		"@orpc/server": "^1.8.1",
 		"@orpc/tanstack-query": "^1.8.1",
+		"@orpc/zod": "^1.8.1",
 		"@vero/db": "*",
 		"drizzle-orm": "^0.44.4",
 		"nanoid": "^5.0.0",

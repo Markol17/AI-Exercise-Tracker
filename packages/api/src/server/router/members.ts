@@ -50,7 +50,7 @@ export const membersRouter = {
 		const limit = input?.limit || 50;
 		const offset = input?.offset || 0;
 
-		const results = await db.select().from(members).limit(limit).offset(offset);
+		const results = await db.select().from(members);
 
 		return {
 			items: results,
