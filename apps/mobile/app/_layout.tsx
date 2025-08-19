@@ -6,7 +6,6 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { useColorScheme } from '../hooks/useColorScheme';
 
-// Create a client
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
@@ -24,7 +23,7 @@ export default function RootLayout() {
 		<QueryClientProvider client={queryClient}>
 			<ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
 				<Stack>
-					<Stack.Screen name='(tabs)'/>
+					<Stack.Screen name='(tabs)' />
 					<Stack.Screen name='+not-found' />
 				</Stack>
 				<StatusBar style='auto' />
