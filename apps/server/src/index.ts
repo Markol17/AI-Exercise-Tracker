@@ -2,7 +2,6 @@ import { appRouter, RPCHandler } from '@vero/api/server';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
 import express from 'express';
-import { initWebSocketServer } from './websocket';
 
 dotenv.config();
 
@@ -11,19 +10,33 @@ const PORT = process.env.PORT || 3000;
 const WS_PORT = process.env.WS_PORT ? parseInt(process.env.WS_PORT) : 3001;
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
 
-const orpcHandler = new RPCHandler(appRouter);
+const rpcHandler = new RPCHandler(appRouter);
+// const openapiHandler = new OpenAPIHandler(appRouter);
 
-app.use('/api*', async (req, res) => {
-	const result = await orpcHandler.handle(req, res, {
-		context: { headers: req.headers },
+app.use('/rpc*', async (req, res, next) => {
+	const { matched } = await rpcHandler.handle(req, res, {
+		prefix: '/rpc',
+		context: {},
 	});
 
-	if (!result.matched) {
-		res.status(404).json({ error: 'Procedure not found' });
+	if (matched) {
+		return;
 	}
+
+	next();
 });
+
+// app.use('/api', async (req, res, next) => {
+// 	const { matched } = await openapiHandler.handle(req, res, {
+// 		prefix: '/api',
+// 	});
+// 	if (matched) {
+// 		return;
+// 	}
+
+// 	next();
+// });
 
 app.get('/health', (req, res) => {
 	res.json({
@@ -36,7 +49,7 @@ app.get('/health', (req, res) => {
 	});
 });
 
-initWebSocketServer(WS_PORT);
+// initWebSocketServer(WS_PORT);
 
 app.listen(PORT, () => {
 	console.log(`Server running on http://localhost:${PORT}`);

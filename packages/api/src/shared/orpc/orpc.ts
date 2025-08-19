@@ -1,4 +1,4 @@
-import { createORPCClient } from '@orpc/client';
+import { createORPCClient, onError } from '@orpc/client';
 import { RPCLink } from '@orpc/client/fetch';
 import type { RouterClient } from '@orpc/server';
 import { type AnyRouter } from '@orpc/server';
@@ -11,9 +11,13 @@ export function createAPIClient<TRouter extends AnyRouter>(apiUrl: string): Rout
 		headers: {
 			'Content-Type': 'application/json',
 		},
+		interceptors: [
+			onError((error) => {
+				console.error(error);
+			}),
+		],
 	});
 
 	const client: RouterClient<TRouter> = createORPCClient(link);
 	return client;
 }
-
