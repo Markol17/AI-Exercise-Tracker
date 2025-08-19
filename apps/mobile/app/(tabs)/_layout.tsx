@@ -2,7 +2,6 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
 
-import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
@@ -15,8 +14,7 @@ export default function TabLayout() {
 		<Tabs
 			screenOptions={{
 				tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-				headerShown: false,
-				tabBarButton: HapticTab,
+				headerShown: true,
 				tabBarBackground: TabBarBackground,
 				tabBarStyle: Platform.select({
 					ios: {
@@ -30,6 +28,7 @@ export default function TabLayout() {
 				name='index'
 				options={{
 					title: 'Home',
+					headerTitle: 'Home',
 					tabBarIcon: ({ color }) => <IconSymbol size={28} name='house.fill' color={color} />,
 				}}
 			/>
@@ -37,21 +36,24 @@ export default function TabLayout() {
 				name='members'
 				options={{
 					title: 'Members',
-					tabBarIcon: ({ color }) => <IconSymbol size={28} name='person.2.fill' color={color} />,
+					headerTitle: 'Members',
+					tabBarIcon: ({ color }) => <IconSymbol size={28} name='person.2' color={color} />,
 				}}
 			/>
 			<Tabs.Screen
 				name='session'
 				options={{
 					title: 'Session',
-					tabBarIcon: ({ color }) => <IconSymbol size={28} name='stopwatch.fill' color={color} />,
+					headerTitle: 'Session',
+					tabBarIcon: ({ color }) => <IconSymbol size={28} name='stopwatch' color={color} />,
 				}}
 			/>
 			<Tabs.Screen
 				name='history'
 				options={{
 					title: 'History',
-					tabBarIcon: ({ color }) => <IconSymbol size={28} name='clock.fill' color={color} />,
+					headerTitle: 'History',
+					tabBarIcon: ({ color }) => <IconSymbol size={28} name='clock' color={color} />,
 				}}
 			/>
 		</Tabs>
