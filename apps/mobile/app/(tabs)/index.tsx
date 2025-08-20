@@ -10,7 +10,7 @@ export default function HomeScreen() {
 	const [currentMember, setCurrentMember] = useState<any>(null);
 
 	// Real-time events using WebSocket
-	const { events, isConnected, error, clearEvents, triggerTest } = useRealtimeEvents();
+	const { events, isConnected, connectionStatus, clearEvents, triggerTest } = useRealtimeEvents();
 
 	const createSessionMutation = useCreateSession();
 	const endSessionMutation = useEndSession();
@@ -60,8 +60,9 @@ export default function HomeScreen() {
 				{/* Connection Status */}
 				<View style={[styles.statusCard, isConnected ? styles.connected : styles.disconnected]}>
 					<Text style={styles.statusText}>{isConnected ? '🟢 Real-time Connected' : '🔴 Real-time Disconnected'}</Text>
-					<Text style={styles.debugText}>WebSocket | Events: {events.length}</Text>
-					{error && <Text style={styles.errorText}>Error: {error}</Text>}
+					<Text style={styles.debugText}>
+						Status: {connectionStatus} | Events: {events.length}
+					</Text>
 					<TouchableOpacity style={styles.testButton} onPress={triggerTest}>
 						<Text style={styles.testButtonText}>🧪 Test Event Stream</Text>
 					</TouchableOpacity>
@@ -141,7 +142,6 @@ export default function HomeScreen() {
 							<Text style={styles.noEventsText}>
 								{isConnected ? '📡 Listening for real-time events...' : '🔌 Connecting to event stream...'}
 							</Text>
-							{error && <Text style={styles.errorText}>Error: {error}</Text>}
 						</View>
 					) : (
 						<>
