@@ -1,15 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ClientType, reactQueryApiClient } from '@vero/api';
+import { reactQueryApiClient } from '@vero/api';
+import { useEffect, useState } from 'react';
 
 // Members API hooks
 export function useMembers() {
-	return useQuery(
-		reactQueryApiClient.members.list.queryOptions({
-			context: {
-				type: ClientType.WS,
-			},
-		})
-	);
+	return useQuery(reactQueryApiClient.members.list.queryOptions());
 }
 
 export function useCreateMember() {
@@ -17,9 +12,6 @@ export function useCreateMember() {
 
 	return useMutation(
 		reactQueryApiClient.members.create.mutationOptions({
-			context: {
-				type: ClientType.REST,
-			},
 			onSuccess: () => {
 				// Invalidate members list to refetch after creating
 				queryClient.invalidateQueries({ queryKey: ['members', 'list'] });
@@ -33,9 +25,6 @@ export function useEnrollMember() {
 
 	return useMutation(
 		reactQueryApiClient.members.enrollIdentity.mutationOptions({
-			context: {
-				type: ClientType.REST,
-			},
 			onSuccess: () => {
 				queryClient.invalidateQueries({ queryKey: ['members', 'list'] });
 			},
@@ -45,23 +34,11 @@ export function useEnrollMember() {
 
 // Sessions API hooks
 export function useCreateSession() {
-	return useMutation(
-		reactQueryApiClient.sessions.create.mutationOptions({
-			context: {
-				type: ClientType.REST,
-			},
-		})
-	);
+	return useMutation(reactQueryApiClient.sessions.create.mutationOptions({}));
 }
 
 export function useEndSession() {
-	return useMutation(
-		reactQueryApiClient.sessions.end.mutationOptions({
-			context: {
-				type: ClientType.REST,
-			},
-		})
-	);
+	return useMutation(reactQueryApiClient.sessions.end.mutationOptions());
 }
 
 export function useSessionEvents(sessionId: string, enabled = true) {
@@ -71,9 +48,6 @@ export function useSessionEvents(sessionId: string, enabled = true) {
 				sessionId,
 				limit: 100,
 				offset: 0,
-			},
-			context: {
-				type: ClientType.REST,
 			},
 		}),
 		enabled: enabled && !!sessionId,
@@ -86,9 +60,6 @@ export function useRecordWeight() {
 
 	return useMutation(
 		reactQueryApiClient.weights.record.mutationOptions({
-			context: {
-				type: ClientType.REST,
-			},
 			onSuccess: (_, variables) => {
 				// Invalidate session events to show the new weight record
 				queryClient.invalidateQueries({
@@ -99,20 +70,69 @@ export function useRecordWeight() {
 	);
 }
 
-// Events API hooks
-export function useCreateEvent() {
-	const queryClient = useQueryClient();
+// Real-time events using ORPC streaming (Server-Sent Events)
+export function useRealtimeEvents() {
+	const [events, setEvents] = useState<any[]>([]);
+	const [isConnected, setIsConnected] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
-	return useMutation(
-		reactQueryApiClient.events.create.mutationOptions({
-			context: {
-				type: ClientType.REST,
-			},
-			onSuccess: (_, variables) => {
-				queryClient.invalidateQueries({
-					queryKey: ['sessions', variables.sessionId, 'events'],
+	useEffect(() => {
+		let abortController: AbortController | null = null;
+
+		const startStream = async () => {
+			try {
+				setError(null);
+				console.log('🔴 Starting event stream...');
+
+				abortController = new AbortController();
+
+				// Start the ORPC streaming endpoint
+				const stream = await reactQueryApiClient.events.stream.call(undefined, {
+					signal: abortController.signal,
 				});
-			},
-		})
-	);
+
+				setIsConnected(true);
+
+				// Process the stream
+				for await (const event of stream) {
+					console.log('📨 Received event:', event);
+					setEvents((prev) => [...prev, event]);
+				}
+			} catch (err: any) {
+				if (err.name !== 'AbortError') {
+					console.error('❌ Stream error:', err);
+					setError(err.message || 'Stream connection failed');
+					setIsConnected(false);
+				}
+			}
+		};
+
+		startStream();
+
+		return () => {
+			if (abortController) {
+				abortController.abort();
+			}
+			setIsConnected(false);
+		};
+	}, []);
+
+	const clearEvents = () => setEvents([]);
+
+	const triggerTest = async () => {
+		try {
+			const result = await reactQueryApiClient.events.test.call();
+			console.log('✅ Test triggered:', result);
+		} catch (error) {
+			console.error('❌ Failed to trigger test:', error);
+		}
+	};
+
+	return {
+		events,
+		isConnected,
+		error,
+		clearEvents,
+		triggerTest,
+	};
 }

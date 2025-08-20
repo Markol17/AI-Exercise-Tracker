@@ -1,4 +1,4 @@
-import { useCreateSession, useEndSession } from '@/hooks/api';
+import { useCreateSession, useEndSession, useRealtimeEvents } from '@/hooks/api';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -8,7 +8,9 @@ export default function HomeScreen() {
 	// This will be implemented with better auth in the @vero/auth package
 	const [currentSession, setCurrentSession] = useState<any>(null);
 	const [currentMember, setCurrentMember] = useState<any>(null);
-	const [wsConnected, setWsConnected] = useState<boolean>(false);
+
+	// Real-time events using ORPC streaming
+	const { events, isConnected, error, clearEvents, triggerTest } = useRealtimeEvents();
 
 	const createSessionMutation = useCreateSession();
 	const endSessionMutation = useEndSession();
@@ -56,8 +58,12 @@ export default function HomeScreen() {
 				<Text style={styles.title}>Vero Wellness</Text>
 
 				{/* Connection Status */}
-				<View style={[styles.statusCard, wsConnected ? styles.connected : styles.disconnected]}>
-					<Text style={styles.statusText}>{wsConnected ? '🟢 Connected' : '🔴 Disconnected'}</Text>
+				<View style={[styles.statusCard, isConnected ? styles.connected : styles.disconnected]}>
+					<Text style={styles.statusText}>{isConnected ? '🟢 Real-time Connected' : '🔴 Real-time Disconnected'}</Text>
+					{error && <Text style={styles.errorText}>Error: {error}</Text>}
+					<TouchableOpacity style={styles.testButton} onPress={triggerTest}>
+						<Text style={styles.testButtonText}>🧪 Test Event Stream</Text>
+					</TouchableOpacity>
 				</View>
 
 				{/* Current Member */}
@@ -117,6 +123,31 @@ export default function HomeScreen() {
 						<Text style={styles.actionButtonText}>View Session Details</Text>
 					</TouchableOpacity>
 				</View>
+
+				{/* Real-time Events */}
+				{events.length > 0 && (
+					<View style={styles.card}>
+						<View style={styles.eventsHeader}>
+							<Text style={styles.cardTitle}>Real-time Events ({events.length})</Text>
+							<TouchableOpacity style={styles.clearButton} onPress={clearEvents}>
+								<Text style={styles.clearButtonText}>Clear</Text>
+							</TouchableOpacity>
+						</View>
+						{events
+							.slice(-3)
+							.reverse()
+							.map((event, index) => (
+								<View key={index} style={styles.eventItem}>
+									<Text style={styles.eventType}>🔔 {event.type}</Text>
+									<Text style={styles.eventData}>{JSON.stringify(event.data, null, 2)}</Text>
+									<Text style={styles.eventTime}>
+										{new Date(event.data?.timestamp || Date.now()).toLocaleTimeString()}
+									</Text>
+								</View>
+							))}
+						{events.length > 3 && <Text style={styles.moreEvents}>... and {events.length - 3} more events</Text>}
+					</View>
+				)}
 			</View>
 		</ScrollView>
 	);
@@ -243,5 +274,71 @@ const styles = StyleSheet.create({
 	actionButtonText: {
 		color: 'white',
 		fontWeight: '600',
+	},
+	testButton: {
+		backgroundColor: '#6c757d',
+		padding: 8,
+		borderRadius: 6,
+		marginTop: 8,
+	},
+	testButtonText: {
+		color: 'white',
+		fontSize: 12,
+		fontWeight: '500',
+	},
+	eventsHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		marginBottom: 12,
+	},
+	clearButton: {
+		backgroundColor: '#dc3545',
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 4,
+	},
+	clearButtonText: {
+		color: 'white',
+		fontSize: 12,
+		fontWeight: '500',
+	},
+	eventItem: {
+		backgroundColor: '#f8f9fa',
+		padding: 12,
+		borderRadius: 6,
+		marginBottom: 8,
+		borderLeftWidth: 3,
+		borderLeftColor: '#28a745',
+	},
+	eventType: {
+		fontSize: 14,
+		fontWeight: '600',
+		color: '#333',
+		marginBottom: 4,
+	},
+	eventData: {
+		fontSize: 12,
+		color: '#666',
+		fontFamily: 'monospace',
+		marginBottom: 4,
+	},
+	eventTime: {
+		fontSize: 11,
+		color: '#999',
+		textAlign: 'right',
+	},
+	moreEvents: {
+		fontSize: 12,
+		color: '#666',
+		textAlign: 'center',
+		fontStyle: 'italic',
+		marginTop: 8,
+	},
+	errorText: {
+		fontSize: 12,
+		color: '#dc3545',
+		marginTop: 4,
+		textAlign: 'center',
 	},
 });

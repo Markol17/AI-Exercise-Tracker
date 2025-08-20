@@ -8,8 +8,8 @@ export const appRouter = {
 	health: healthRouter,
 	members: membersRouter,
 	sessions: sessionsRouter,
-	events: eventsRouter,
 	weights: weightsRouter,
+	events: eventsRouter,
 };
 
 export type AppRouter = typeof appRouter;

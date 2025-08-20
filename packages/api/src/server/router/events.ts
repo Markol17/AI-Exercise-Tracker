@@ -1,11 +1,89 @@
 import { os } from '@orpc/server';
 import { db, events } from '@vero/db';
 import { nanoid } from 'nanoid';
+import { z } from 'zod';
 import { eventSchema, getRecentEventsSchema, ingestEventsSchema } from '../../shared/orpc/contracts';
-// Note: broadcastEvent will need to be injected or handled by the server
+
+// Event emitter for real-time updates
+import { EventEmitter } from 'events';
+export const eventBroadcaster = new EventEmitter();
 
 export const eventsRouter = {
-	ingest: os.input(ingestEventsSchema).handler(async ({ input, context }) => {
+	// Server-Sent Events stream for real-time updates
+	stream: os.handler(async function* () {
+		console.log('🔴 Starting event stream...');
+
+		// Send initial connection message
+		yield {
+			type: 'connected',
+			timestamp: new Date().toISOString(),
+			message: 'Real-time event stream connected',
+		};
+
+		try {
+			// Keep the stream alive and yield events
+			while (true) {
+				const event = await new Promise<any>((resolve) => {
+					eventBroadcaster.once('broadcast', resolve);
+				});
+
+				console.log('📡 Yielding event:', event);
+				yield event;
+			}
+		} catch (error) {
+			console.error('🔴 Event stream error:', error);
+		} finally {
+			console.log('🔴 Event stream ended');
+		}
+	}),
+
+	// Simple test endpoint
+	test: os.handler(async () => {
+		const testEvent = {
+			type: 'test_broadcast',
+			data: {
+				message: 'Hello from server!',
+				timestamp: new Date().toISOString(),
+			},
+		};
+
+		// Broadcast the event
+		eventBroadcaster.emit('broadcast', testEvent);
+
+		return {
+			success: true,
+			message: 'Test event broadcasted',
+			timestamp: new Date().toISOString(),
+		};
+	}),
+
+	// Broadcast weight update
+	broadcastWeightUpdate: os
+		.input(
+			z.object({
+				sessionId: z.string(),
+				weight: z.number(),
+				memberId: z.string(),
+			})
+		)
+		.handler(async ({ input }) => {
+			const weightEvent = {
+				type: 'weight_updated',
+				data: {
+					sessionId: input.sessionId,
+					weight: input.weight,
+					memberId: input.memberId,
+					timestamp: new Date().toISOString(),
+				},
+			};
+
+			// Broadcast the event
+			eventBroadcaster.emit('broadcast', weightEvent);
+
+			return { success: true };
+		}),
+
+	ingest: os.input(ingestEventsSchema).handler(async ({ input }) => {
 		if (input.authToken !== process.env.INGESTION_SECRET) {
 			throw new Error('Unauthorized');
 		}
@@ -27,8 +105,11 @@ export const eventsRouter = {
 
 				const insertedEvent = inserted[0];
 
-				// TODO: Broadcast event (will be handled by server layer)
-				// context.broadcast(JSON.stringify(insertedEvent));
+				// Broadcast the event in real-time
+				eventBroadcaster.emit('broadcast', {
+					type: 'event_ingested',
+					data: insertedEvent,
+				});
 
 				return insertedEvent;
 			})
@@ -57,7 +138,11 @@ export const eventsRouter = {
 
 		const insertedEvent = event[0];
 
-		// TODO: Broadcast event (will be handled by server layer)
+		// Broadcast the event in real-time
+		eventBroadcaster.emit('broadcast', {
+			type: 'event_created',
+			data: insertedEvent,
+		});
 
 		return insertedEvent;
 	}),

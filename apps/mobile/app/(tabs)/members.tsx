@@ -1,4 +1,5 @@
 import { useCreateMember, useEnrollMember, useMembers } from '@/hooks/api';
+import { AppRouterOutput } from '@vero/api';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -11,6 +12,10 @@ export default function MembersScreen() {
 	const members = membersData?.items || [];
 	const createMemberMutation = useCreateMember();
 	const enrollMemberMutation = useEnrollMember();
+
+	const enrollMember = async (member: AppRouterOutput['members']['create']) => {
+		await enrollMemberMutation.mutateAsync({ memberId: member.id, photoData: '', consent: true });
+	};
 
 	const createMember = async () => {
 		if (!newMemberName.trim()) {
@@ -31,10 +36,6 @@ export default function MembersScreen() {
 		// TODO: Implement member selection state management without Zustand
 		Alert.alert('Member Selected', `Selected ${member.name}`);
 		router.back();
-	};
-
-	const enrollIdentity = (member: any) => {
-		router.push(`/enrollment/${member.id}`);
 	};
 
 	return (
@@ -63,7 +64,7 @@ export default function MembersScreen() {
 							{item.email && <Text style={styles.memberEmail}>{item.email}</Text>}
 							{item.enrolledAt && <Text style={styles.enrollStatus}>✓ Identity Enrolled</Text>}
 						</TouchableOpacity>
-						<TouchableOpacity style={styles.enrollButton} onPress={() => enrollIdentity(item)}>
+						<TouchableOpacity style={styles.enrollButton} onPress={() => enrollMember(item)}>
 							<Text style={styles.enrollButtonText}>{item.enrolledAt ? 'Update' : 'Enroll'}</Text>
 						</TouchableOpacity>
 					</View>

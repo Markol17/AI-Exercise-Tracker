@@ -10,7 +10,6 @@ import {
 	stringIdSchema,
 	updateMemberSchema,
 } from '../../shared/orpc/contracts';
-import { base } from '../../shared/orpc/server';
 
 export const membersRouter = {
 	create: os.input(createMemberSchema).handler(async ({ input }) => {
@@ -47,21 +46,9 @@ export const membersRouter = {
 		return member[0] || null;
 	}),
 
-	list: base.input(listMembersSchema).handler(async ({ input, context }) => {
+	list: os.input(listMembersSchema).handler(async ({ input }) => {
 		const limit = input?.limit || 50;
 		const offset = input?.offset || 0;
-
-		console.log('context', context.getAllClients());
-
-		context.send(
-			JSON.stringify({
-				type: 'test',
-				payload: {
-					limit,
-					offset,
-				},
-			})
-		);
 
 		const results = await db.select().from(members);
 
