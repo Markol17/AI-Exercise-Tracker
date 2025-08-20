@@ -5,7 +5,7 @@ import { eventSchema, getRecentEventsSchema, ingestEventsSchema } from '../../sh
 // Note: broadcastEvent will need to be injected or handled by the server
 
 export const eventsRouter = {
-	ingest: os.input(ingestEventsSchema).handler(async ({ input }) => {
+	ingest: os.input(ingestEventsSchema).handler(async ({ input, context }) => {
 		if (input.authToken !== process.env.INGESTION_SECRET) {
 			throw new Error('Unauthorized');
 		}
@@ -28,6 +28,7 @@ export const eventsRouter = {
 				const insertedEvent = inserted[0];
 
 				// TODO: Broadcast event (will be handled by server layer)
+				// context.broadcast(JSON.stringify(insertedEvent));
 
 				return insertedEvent;
 			})

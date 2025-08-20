@@ -2,10 +2,11 @@
 import { InferRouterInputs, InferRouterOutputs } from '@orpc/server';
 import { createTanstackQueryUtils } from '@orpc/tanstack-query';
 import { AppRouter } from '../server/router';
-import { getApiUrl } from '../shared/config';
-import { createAPIClient } from '../shared/orpc/orpc';
+import { createAPIClient } from '../shared/orpc/client';
 
-export const apiClient = createAPIClient<AppRouter>(getApiUrl());
+const apiClient = createAPIClient<AppRouter>();
 export const reactQueryApiClient = createTanstackQueryUtils(apiClient);
 export type RouterInput = InferRouterInputs<AppRouter>;
 export type RouterOutput = InferRouterOutputs<AppRouter>;
+export { RPCLink as RPCLinkWS } from '@orpc/client/websocket';
+export { cleanupConnections, ClientType } from '../shared/orpc/client';

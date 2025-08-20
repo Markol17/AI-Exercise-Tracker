@@ -1,9 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { reactQueryApiClient } from '@vero/api';
+import { ClientType, reactQueryApiClient } from '@vero/api';
 
 // Members API hooks
 export function useMembers() {
-	return useQuery(reactQueryApiClient.members.list.queryOptions({}));
+	return useQuery(
+		reactQueryApiClient.members.list.queryOptions({
+			context: {
+				type: ClientType.WS,
+			},
+		})
+	);
 }
 
 export function useCreateMember() {
@@ -11,6 +17,9 @@ export function useCreateMember() {
 
 	return useMutation(
 		reactQueryApiClient.members.create.mutationOptions({
+			context: {
+				type: ClientType.REST,
+			},
 			onSuccess: () => {
 				// Invalidate members list to refetch after creating
 				queryClient.invalidateQueries({ queryKey: ['members', 'list'] });
@@ -24,6 +33,9 @@ export function useEnrollMember() {
 
 	return useMutation(
 		reactQueryApiClient.members.enrollIdentity.mutationOptions({
+			context: {
+				type: ClientType.REST,
+			},
 			onSuccess: () => {
 				queryClient.invalidateQueries({ queryKey: ['members', 'list'] });
 			},
@@ -33,11 +45,23 @@ export function useEnrollMember() {
 
 // Sessions API hooks
 export function useCreateSession() {
-	return useMutation(reactQueryApiClient.sessions.create.mutationOptions({}));
+	return useMutation(
+		reactQueryApiClient.sessions.create.mutationOptions({
+			context: {
+				type: ClientType.REST,
+			},
+		})
+	);
 }
 
 export function useEndSession() {
-	return useMutation(reactQueryApiClient.sessions.end.mutationOptions({}));
+	return useMutation(
+		reactQueryApiClient.sessions.end.mutationOptions({
+			context: {
+				type: ClientType.REST,
+			},
+		})
+	);
 }
 
 export function useSessionEvents(sessionId: string, enabled = true) {
@@ -47,6 +71,9 @@ export function useSessionEvents(sessionId: string, enabled = true) {
 				sessionId,
 				limit: 100,
 				offset: 0,
+			},
+			context: {
+				type: ClientType.REST,
 			},
 		}),
 		enabled: enabled && !!sessionId,
@@ -59,6 +86,9 @@ export function useRecordWeight() {
 
 	return useMutation(
 		reactQueryApiClient.weights.record.mutationOptions({
+			context: {
+				type: ClientType.REST,
+			},
 			onSuccess: (_, variables) => {
 				// Invalidate session events to show the new weight record
 				queryClient.invalidateQueries({
@@ -75,6 +105,9 @@ export function useCreateEvent() {
 
 	return useMutation(
 		reactQueryApiClient.events.create.mutationOptions({
+			context: {
+				type: ClientType.REST,
+			},
 			onSuccess: (_, variables) => {
 				queryClient.invalidateQueries({
 					queryKey: ['sessions', variables.sessionId, 'events'],

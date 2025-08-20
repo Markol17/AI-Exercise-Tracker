@@ -1,6 +1,12 @@
 import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins';
-import { onError } from '@orpc/server';
-import { appRouter, OpenAPIHandler, RPCHandler, SmartCoercionPlugin, ZodToJsonSchemaConverter } from '@vero/api/server';
+import {
+	appRouter,
+	onError,
+	OpenAPIHandler,
+	RPCHandler,
+	SmartCoercionPlugin,
+	ZodToJsonSchemaConverter,
+} from '@vero/api/server';
 import { allContracts } from '@vero/api/shared';
 import cors from 'cors';
 import 'dotenv/config';
@@ -8,7 +14,7 @@ import express from 'express';
 import { initWebSocketServer } from './websocket';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 const WS_PORT = process.env.WS_PORT ? parseInt(process.env.WS_PORT) : 3001;
 
 app.use(cors());
@@ -16,7 +22,6 @@ app.use(cors());
 const rpcHandler = new RPCHandler(appRouter);
 
 const zodConverter = new ZodToJsonSchemaConverter();
-
 const openAPIHandler = new OpenAPIHandler(appRouter, {
 	interceptors: [
 		onError((error) => {
@@ -64,7 +69,6 @@ const openAPIHandler = new OpenAPIHandler(appRouter, {
 app.use('/rpc*', async (req, res, next) => {
 	const { matched } = await rpcHandler.handle(req, res, {
 		prefix: '/rpc',
-		context: {},
 	});
 
 	if (matched) {
@@ -85,17 +89,6 @@ app.use('/api*', async (req, res, next) => {
 	next();
 });
 
-app.get('/health', (req, res) => {
-	res.json({
-		status: 'healthy',
-		timestamp: new Date(),
-		endpoints: {
-			api: '/api',
-			websocket: `ws://localhost:${WS_PORT}`,
-		},
-	});
-});
-
 initWebSocketServer(WS_PORT);
 
 app.listen(PORT, () => {
@@ -103,5 +96,4 @@ app.listen(PORT, () => {
 	console.log(`OpenAPI docs running on http://localhost:${PORT}/api`);
 	console.log(`RPC server running on http://localhost:${PORT}/rpc`);
 	console.log(`WebSocket server running on ws://localhost:${WS_PORT}`);
-	console.log(`Database: ${process.env.DATABASE_URL?.split('@')[1] || 'configured'}`);
 });
