@@ -9,7 +9,7 @@ export default function HomeScreen() {
 	const [currentSession, setCurrentSession] = useState<any>(null);
 	const [currentMember, setCurrentMember] = useState<any>(null);
 
-	// Real-time events using ORPC streaming
+	// Real-time events using WebSocket
 	const { events, isConnected, error, clearEvents, triggerTest } = useRealtimeEvents();
 
 	const createSessionMutation = useCreateSession();
@@ -60,6 +60,7 @@ export default function HomeScreen() {
 				{/* Connection Status */}
 				<View style={[styles.statusCard, isConnected ? styles.connected : styles.disconnected]}>
 					<Text style={styles.statusText}>{isConnected ? '🟢 Real-time Connected' : '🔴 Real-time Disconnected'}</Text>
+					<Text style={styles.debugText}>WebSocket | Events: {events.length}</Text>
 					{error && <Text style={styles.errorText}>Error: {error}</Text>}
 					<TouchableOpacity style={styles.testButton} onPress={triggerTest}>
 						<Text style={styles.testButtonText}>🧪 Test Event Stream</Text>
@@ -125,29 +126,41 @@ export default function HomeScreen() {
 				</View>
 
 				{/* Real-time Events */}
-				{events.length > 0 && (
-					<View style={styles.card}>
-						<View style={styles.eventsHeader}>
-							<Text style={styles.cardTitle}>Real-time Events ({events.length})</Text>
+				<View style={styles.card}>
+					<View style={styles.eventsHeader}>
+						<Text style={styles.cardTitle}>Real-time Events ({events.length})</Text>
+						{events.length > 0 && (
 							<TouchableOpacity style={styles.clearButton} onPress={clearEvents}>
 								<Text style={styles.clearButtonText}>Clear</Text>
 							</TouchableOpacity>
-						</View>
-						{events
-							.slice(-3)
-							.reverse()
-							.map((event, index) => (
-								<View key={index} style={styles.eventItem}>
-									<Text style={styles.eventType}>🔔 {event.type}</Text>
-									<Text style={styles.eventData}>{JSON.stringify(event.data, null, 2)}</Text>
-									<Text style={styles.eventTime}>
-										{new Date(event.data?.timestamp || Date.now()).toLocaleTimeString()}
-									</Text>
-								</View>
-							))}
-						{events.length > 3 && <Text style={styles.moreEvents}>... and {events.length - 3} more events</Text>}
+						)}
 					</View>
-				)}
+
+					{events.length === 0 ? (
+						<View style={styles.noEventsContainer}>
+							<Text style={styles.noEventsText}>
+								{isConnected ? '📡 Listening for real-time events...' : '🔌 Connecting to event stream...'}
+							</Text>
+							{error && <Text style={styles.errorText}>Error: {error}</Text>}
+						</View>
+					) : (
+						<>
+							{events
+								.slice(-3)
+								.reverse()
+								.map((event, index) => (
+									<View key={index} style={styles.eventItem}>
+										<Text style={styles.eventType}>🔔 {event.type}</Text>
+										<Text style={styles.eventData}>{JSON.stringify(event.data, null, 2)}</Text>
+										<Text style={styles.eventTime}>
+											{new Date(event.data?.timestamp || Date.now()).toLocaleTimeString()}
+										</Text>
+									</View>
+								))}
+							{events.length > 3 && <Text style={styles.moreEvents}>... and {events.length - 3} more events</Text>}
+						</>
+					)}
+				</View>
 			</View>
 		</ScrollView>
 	);
@@ -340,5 +353,21 @@ const styles = StyleSheet.create({
 		color: '#dc3545',
 		marginTop: 4,
 		textAlign: 'center',
+	},
+	noEventsContainer: {
+		padding: 16,
+		alignItems: 'center',
+	},
+	noEventsText: {
+		fontSize: 14,
+		color: '#666',
+		textAlign: 'center',
+		fontStyle: 'italic',
+	},
+	debugText: {
+		fontSize: 11,
+		color: '#888',
+		textAlign: 'center',
+		marginTop: 4,
 	},
 });

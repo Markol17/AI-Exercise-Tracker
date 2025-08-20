@@ -70,7 +70,6 @@ export function useRecordWeight() {
 	);
 }
 
-// Real-time events using ORPC streaming (Server-Sent Events)
 export function useRealtimeEvents() {
 	const [events, setEvents] = useState<any[]>([]);
 	const [isConnected, setIsConnected] = useState(false);
@@ -79,35 +78,53 @@ export function useRealtimeEvents() {
 	useEffect(() => {
 		let abortController: AbortController | null = null;
 
-		const startStream = async () => {
+		const connectWebSocket = () => {
 			try {
 				setError(null);
-				console.log('🔴 Starting event stream...');
+				console.log('🔗 Connecting to WebSocket...');
 
-				abortController = new AbortController();
+				const ws = new WebSocket('ws://192.168.1.103:3001');
 
-				// Start the ORPC streaming endpoint
-				const stream = await reactQueryApiClient.events.stream.call(undefined, {
-					signal: abortController.signal,
-				});
+				ws.onopen = () => {
+					console.log('✅ WebSocket connected');
+					setIsConnected(true);
+				};
 
-				setIsConnected(true);
+				ws.onmessage = (event) => {
+					try {
+						const data = JSON.parse(event.data);
+						console.log('📨 WebSocket received:', JSON.stringify(data, null, 2));
+						setEvents((prev) => {
+							const newEvents = [...prev, data];
+							console.log(`📊 Total events now: ${newEvents.length}`);
+							return newEvents;
+						});
+					} catch (parseError) {
+						console.warn('Failed to parse WebSocket message:', event.data, parseError);
+					}
+				};
 
-				// Process the stream
-				for await (const event of stream) {
-					console.log('📨 Received event:', event);
-					setEvents((prev) => [...prev, event]);
-				}
-			} catch (err: any) {
-				if (err.name !== 'AbortError') {
-					console.error('❌ Stream error:', err);
-					setError(err.message || 'Stream connection failed');
+				ws.onerror = (error) => {
+					console.error('❌ WebSocket error:', error);
+					setError('WebSocket connection error');
 					setIsConnected(false);
-				}
+				};
+
+				ws.onclose = () => {
+					console.log('🔴 WebSocket disconnected');
+					setIsConnected(false);
+				};
+
+				// Store for cleanup
+				abortController = { abort: () => ws.close() } as any;
+			} catch (err: any) {
+				console.error('❌ WebSocket connection failed:', err);
+				setError(err.message || 'WebSocket connection failed');
+				setIsConnected(false);
 			}
 		};
 
-		startStream();
+		connectWebSocket();
 
 		return () => {
 			if (abortController) {

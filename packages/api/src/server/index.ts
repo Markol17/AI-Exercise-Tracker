@@ -7,3 +7,4 @@ export { RPCHandler as RPCHandlerWS } from '@orpc/server/ws';
 export { ZodToJsonSchemaConverter } from '@orpc/zod/zod4';
 
 export * from './router';
+export { initWebSocketServer } from './websocket';

@@ -4,40 +4,11 @@ import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { eventSchema, getRecentEventsSchema, ingestEventsSchema } from '../../shared/orpc/contracts';
 
-// Event emitter for real-time updates
-import { EventEmitter } from 'events';
-export const eventBroadcaster = new EventEmitter();
+// Import WebSocket broadcasting function
+import { broadcastToAll, getClientCount } from '../websocket';
 
 export const eventsRouter = {
-	// Server-Sent Events stream for real-time updates
-	stream: os.handler(async function* () {
-		console.log('🔴 Starting event stream...');
-
-		// Send initial connection message
-		yield {
-			type: 'connected',
-			timestamp: new Date().toISOString(),
-			message: 'Real-time event stream connected',
-		};
-
-		try {
-			// Keep the stream alive and yield events
-			while (true) {
-				const event = await new Promise<any>((resolve) => {
-					eventBroadcaster.once('broadcast', resolve);
-				});
-
-				console.log('📡 Yielding event:', event);
-				yield event;
-			}
-		} catch (error) {
-			console.error('🔴 Event stream error:', error);
-		} finally {
-			console.log('🔴 Event stream ended');
-		}
-	}),
-
-	// Simple test endpoint
+	// Simple test endpoint - broadcasts via WebSocket
 	test: os.handler(async () => {
 		const testEvent = {
 			type: 'test_broadcast',
@@ -47,12 +18,13 @@ export const eventsRouter = {
 			},
 		};
 
-		// Broadcast the event
-		eventBroadcaster.emit('broadcast', testEvent);
+		// Broadcast via WebSocket to all connected clients
+		console.log(`🔥 Broadcasting test event to all WebSocket clients`);
+		broadcastToAll(testEvent);
 
 		return {
 			success: true,
-			message: 'Test event broadcasted',
+			message: `Test event broadcasted to ${getClientCount()} clients`,
 			timestamp: new Date().toISOString(),
 		};
 	}),
@@ -77,10 +49,14 @@ export const eventsRouter = {
 				},
 			};
 
-			// Broadcast the event
-			eventBroadcaster.emit('broadcast', weightEvent);
+			// Broadcast via WebSocket to all connected clients
+			console.log(`🏋️ Broadcasting weight update to all WebSocket clients`);
+			broadcastToAll(weightEvent);
 
-			return { success: true };
+			return {
+				success: true,
+				broadcastedTo: getClientCount(),
+			};
 		}),
 
 	ingest: os.input(ingestEventsSchema).handler(async ({ input }) => {
@@ -105,8 +81,8 @@ export const eventsRouter = {
 
 				const insertedEvent = inserted[0];
 
-				// Broadcast the event in real-time
-				eventBroadcaster.emit('broadcast', {
+				// Broadcast the event in real-time via WebSocket
+				broadcastToAll({
 					type: 'event_ingested',
 					data: insertedEvent,
 				});
@@ -138,8 +114,8 @@ export const eventsRouter = {
 
 		const insertedEvent = event[0];
 
-		// Broadcast the event in real-time
-		eventBroadcaster.emit('broadcast', {
+		// Broadcast the event in real-time via WebSocket
+		broadcastToAll({
 			type: 'event_created',
 			data: insertedEvent,
 		});

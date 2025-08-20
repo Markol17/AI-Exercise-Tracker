@@ -1,6 +1,7 @@
 import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins';
 import {
 	appRouter,
+	initWebSocketServer,
 	onError,
 	OpenAPIHandler,
 	RPCHandler,
@@ -14,6 +15,7 @@ import express from 'express';
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+const WS_PORT = process.env.WS_PORT ? parseInt(process.env.WS_PORT) : 3001;
 
 app.use(cors());
 
@@ -87,8 +89,11 @@ app.use('/api*', async (req, res, next) => {
 	next();
 });
 
+initWebSocketServer(WS_PORT);
+
 app.listen(PORT, () => {
 	console.log(`Server running on http://localhost:${PORT}`);
 	console.log(`OpenAPI docs running on http://localhost:${PORT}/api`);
 	console.log(`RPC server running on http://localhost:${PORT}/rpc`);
+	console.log(`WebSocket server running on ws://localhost:${WS_PORT}`);
 });
