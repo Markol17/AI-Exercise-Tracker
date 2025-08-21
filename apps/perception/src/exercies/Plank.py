@@ -4,6 +4,7 @@ import mediapipe as mp
 from src.exercies.Exercise import Exercise
 from src.ThreadedCamera import ThreadedCamera
 from src.utils import *
+from src.websocket_client import ws_client
 
 mp_drawing = mp.solutions.drawing_utils
 mp_holistic = mp.solutions.holistic
@@ -33,6 +34,10 @@ class Plank(Exercise):
         eang1 = 0
         plankTimer = None
         plankDuration = 0
+        last_sent_duration = -1
+
+        # Connect to WebSocket server
+        ws_client.connect()
         while True:
             success, image = threaded_camera.show_frame()
             if not success or image is None:
@@ -109,6 +114,13 @@ class Plank(Exercise):
                         plankTimer = time.time()
                     plankDuration += time.time() - plankTimer
                     plankTimer = time.time()
+
+                    # Send real-time plank duration every second
+                    current_duration = int(plankDuration)
+                    if current_duration != last_sent_duration:
+                        ws_client.send_plank_duration(plankDuration)
+                        last_sent_duration = current_duration
+                        print(f"📱 Sent plank duration: {plankDuration:.1f}s")
                 else:
                     plankTimer = None
                 bar = np.interp(eang1, (120, 170), (850, 300))

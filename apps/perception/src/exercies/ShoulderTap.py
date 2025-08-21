@@ -4,6 +4,7 @@ import mediapipe as mp
 from src.exercies.Exercise import Exercise
 from src.ThreadedCamera import ThreadedCamera
 from src.utils import *
+from src.websocket_client import ws_client
 
 mp_drawing = mp.solutions.drawing_utils
 mp_holistic = mp.solutions.holistic
@@ -35,6 +36,10 @@ class ShoulderTap(Exercise):
         count = 0
         frames = 0
         performedLeftTap = False
+        last_sent_count = -1
+
+        # Connect to WebSocket server
+        ws_client.connect()
         performedRightTap = False
         while True:
 
@@ -163,11 +168,24 @@ class ShoulderTap(Exercise):
                     if ang1 > 150 and performedLeftTap:
                         count += 1
                         performedLeftTap = False
+
+                        # Send real-time tap count to mobile app
+                        if count != last_sent_count:
+                            ws_client.send_shoulder_tap_count(count)
+                            last_sent_count = count
+                            print(f"📱 Sent shoulder tap count: {count}")
+
                     if ang2 < 120:
                         performedRightTap = True
                     if ang2 > 150 and performedRightTap:
                         count += 1
                         performedRightTap = False
+
+                        # Send real-time tap count to mobile app
+                        if count != last_sent_count:
+                            ws_client.send_shoulder_tap_count(count)
+                            last_sent_count = count
+                            print(f"📱 Sent shoulder tap count: {count}")
 
                 ang1 = 180 - ang1
                 c1 = (255, 0, 0)

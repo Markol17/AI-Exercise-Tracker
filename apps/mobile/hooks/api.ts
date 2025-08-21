@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { reactQueryApiClient } from '@vero/api';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 
 // Members API hooks
@@ -105,7 +105,7 @@ export function useRealtimeEvents() {
 					console.log(`📊 Total events now: ${newEvents.length}`);
 					return newEvents;
 				});
-			} catch (parseError) {
+			} catch {
 				console.warn('Failed to parse WebSocket message:', lastMessage.data);
 			}
 		}
@@ -149,5 +149,78 @@ export function useRealtimeEvents() {
 		triggerTest,
 		sendWebSocketMessage,
 		webSocket: getWebSocket(),
+	};
+}
+
+// Exercise stats real-time hook
+export function useExerciseStats() {
+	const [currentExercise, setCurrentExercise] = useState<string | null>(null);
+	const [repCount, setRepCount] = useState<number>(0);
+	const [plankDuration, setPlankDuration] = useState<number>(0);
+	const [shoulderTapCount, setShouldertapCount] = useState<number>(0);
+
+	const { readyState } = useWebSocket('ws://localhost:3001', {
+		onMessage: (event) => {
+			try {
+				const data = JSON.parse(event.data);
+				console.log('🏋️ Exercise stats received:', data);
+
+				if (data.type === 'exercise_stats') {
+					const { exercise, data: exerciseData } = data;
+					setCurrentExercise(exercise);
+
+					if (exerciseData.type === 'rep_count') {
+						setRepCount(exerciseData.count);
+					} else if (exerciseData.type === 'duration') {
+						setPlankDuration(exerciseData.duration);
+					} else if (exerciseData.type === 'tap_count') {
+						setShouldertapCount(exerciseData.count);
+					}
+				}
+			} catch (error) {
+				console.error('Error parsing exercise stats:', error);
+			}
+		},
+		shouldReconnect: (closeEvent) => true,
+	});
+
+	const isConnected = readyState === ReadyState.OPEN;
+	const connectionStatus = {
+		[ReadyState.CONNECTING]: 'Connecting',
+		[ReadyState.OPEN]: 'Open',
+		[ReadyState.CLOSING]: 'Closing',
+		[ReadyState.CLOSED]: 'Closed',
+		[ReadyState.UNINSTANTIATED]: 'Uninstantiated',
+	}[readyState];
+
+	// Reset stats when exercise changes
+	useEffect(() => {
+		if (currentExercise !== null) {
+			if (currentExercise !== 'plank') {
+				setPlankDuration(0);
+			}
+			if (currentExercise !== 'shouldertap') {
+				setShouldertapCount(0);
+			}
+			if (!['pushup', 'squat', 'lunges'].includes(currentExercise)) {
+				setRepCount(0);
+			}
+		}
+	}, [currentExercise]);
+
+	return {
+		currentExercise,
+		repCount,
+		plankDuration,
+		shoulderTapCount,
+		isConnected,
+		connectionStatus,
+		stats: {
+			pushup: repCount,
+			squat: repCount,
+			lunges: repCount,
+			plank: plankDuration,
+			shouldertap: shoulderTapCount,
+		},
 	};
 }

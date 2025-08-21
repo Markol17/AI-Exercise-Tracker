@@ -1,4 +1,4 @@
-import { useSessionEvents } from '@/hooks/api';
+import { useExerciseStats, useSessionEvents } from '@/hooks/api';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -12,6 +12,10 @@ export default function SessionScreen() {
 	// Fetch session events using React Query
 	const { data: eventsData, isLoading, error } = useSessionEvents(currentSession?.id || '', !!currentSession);
 	const events = eventsData?.items || [];
+
+	// Real-time exercise stats from perception app
+	const { currentExercise, repCount, plankDuration, shoulderTapCount, isConnected, connectionStatus } =
+		useExerciseStats();
 
 	const startExerciseSet = (exercise: string) => {
 		const setNumber = events.filter((e: any) => e.metadata?.exercise === exercise).length + 1;
@@ -40,7 +44,42 @@ export default function SessionScreen() {
 				<Text style={styles.sessionTitle}>Active Session</Text>
 				{currentMember && <Text style={styles.memberName}>{currentMember.name}</Text>}
 				<Text style={styles.sessionTime}>Started: {new Date(currentSession.startedAt).toLocaleString()}</Text>
+
+				{/* WebSocket Connection Status */}
+				<View style={styles.connectionStatus}>
+					<Text style={[styles.connectionText, { color: isConnected ? '#28a745' : '#dc3545' }]}>
+						Perception: {connectionStatus}
+					</Text>
+				</View>
 			</View>
+
+			{/* Real-time Exercise Stats */}
+			{currentExercise && (
+				<View style={styles.realtimeStats}>
+					<Text style={styles.realtimeTitle}>🏋️ Live Exercise Tracking</Text>
+					<View style={styles.statsContainer}>
+						<View style={styles.statCard}>
+							<Text style={styles.exerciseType}>{currentExercise.toUpperCase()}</Text>
+							{currentExercise === 'plank' ? (
+								<>
+									<Text style={styles.statValue}>{plankDuration.toFixed(1)}s</Text>
+									<Text style={styles.statLabel}>Duration</Text>
+								</>
+							) : currentExercise === 'shouldertap' ? (
+								<>
+									<Text style={styles.statValue}>{shoulderTapCount}</Text>
+									<Text style={styles.statLabel}>Taps</Text>
+								</>
+							) : (
+								<>
+									<Text style={styles.statValue}>{repCount}</Text>
+									<Text style={styles.statLabel}>Reps</Text>
+								</>
+							)}
+						</View>
+					</View>
+				</View>
+			)}
 
 			<View style={styles.section}>
 				<Text style={styles.sectionTitle}>Exercises</Text>
@@ -186,5 +225,58 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 		color: '#666',
 		padding: 16,
+	},
+	connectionStatus: {
+		marginTop: 8,
+		padding: 8,
+		backgroundColor: '#f8f9fa',
+		borderRadius: 6,
+	},
+	connectionText: {
+		fontSize: 12,
+		fontWeight: '500',
+		textAlign: 'center',
+	},
+	realtimeStats: {
+		backgroundColor: 'white',
+		marginTop: 16,
+		padding: 16,
+		borderLeftWidth: 4,
+		borderLeftColor: '#28a745',
+	},
+	realtimeTitle: {
+		fontSize: 18,
+		fontWeight: '600',
+		marginBottom: 16,
+		color: '#28a745',
+	},
+	statsContainer: {
+		alignItems: 'center',
+	},
+	statCard: {
+		backgroundColor: '#f8f9fa',
+		padding: 20,
+		borderRadius: 12,
+		alignItems: 'center',
+		minWidth: 150,
+	},
+	exerciseType: {
+		fontSize: 14,
+		fontWeight: '600',
+		color: '#666',
+		marginBottom: 8,
+		letterSpacing: 1,
+	},
+	statValue: {
+		fontSize: 32,
+		fontWeight: 'bold',
+		color: '#28a745',
+		marginBottom: 4,
+	},
+	statLabel: {
+		fontSize: 12,
+		color: '#666',
+		textTransform: 'uppercase',
+		letterSpacing: 1,
 	},
 });

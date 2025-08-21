@@ -2,6 +2,7 @@ import mediapipe as mp
 from src.exercies.Exercise import Exercise
 from src.ThreadedCamera import ThreadedCamera
 from src.utils import *
+from src.websocket_client import ws_client
 
 mp_drawing = mp.solutions.drawing_utils
 mp_holistic = mp.solutions.holistic
@@ -29,6 +30,10 @@ class Pushup(Exercise):
         cv2.namedWindow("Image", cv2.WINDOW_NORMAL)
         cv2.resizeWindow("Image", 1280, 720)
         scount = 0
+        last_sent_count = -1
+
+        # Connect to WebSocket server
+        ws_client.connect()
         while True:
             success, image = threaded_camera.show_frame()
             if not success or image is None:
@@ -325,6 +330,12 @@ class Pushup(Exercise):
                 if abs(shoulder_coord[1] - ankle_coord[1]) > 300 and performedPushUp:
                     scount += 1
                     performedPushUp = False
+
+                    # Send real-time rep count to mobile app
+                    if scount != last_sent_count:
+                        ws_client.send_rep_count("pushup", scount)
+                        last_sent_count = scount
+                        print(f"📱 Sent pushup count: {scount}")
 
             except:
                 pass
