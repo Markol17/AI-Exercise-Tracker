@@ -13,25 +13,23 @@ echo "⏳ Waiting for database to be ready..."
 sleep 5
 
 echo "🔄 Running database migrations..."
-cd server
+cd apps/server
 npm run db:generate
 npm run db:migrate
-cd ..
+cd ../..
 
-echo "🐍 Setting up Python environment..."
-cd perception
-echo "Creating conda environment..."
+echo "🐍 Setting up Python perception environment..."
+cd apps/perception
+echo "Creating conda environment 'vero-perception'..."
 conda env create -f environment.yml
-echo "Activating environment..."
-conda activate vero
-echo "Installing additional Python dependencies..."
-pip install -r requirements.txt
-cd ..
+echo "Environment 'vero-perception' created successfully!"
+echo "Note: The run script will automatically activate the environment when needed."
+cd ../..
 
 echo "📱 Setting up mobile app..."
-cd mobile
+cd apps/mobile
 npm install
-cd ..
+cd ../..
 
 echo "✅ Setup complete!"
 echo ""

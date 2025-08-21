@@ -27,6 +27,8 @@ class ShoulderTap(Exercise):
 
     def exercise(self):
         threaded_camera = ThreadedCamera()
+        # Create window without top controls
+        cv2.namedWindow("Image", cv2.WINDOW_AUTOSIZE)
         ang1 = 0
         ang2 = 0
         count = 0

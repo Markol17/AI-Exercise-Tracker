@@ -24,6 +24,8 @@ class Squat(Exercise):
 
     def exercise(self):
         threaded_camera = ThreadedCamera()
+        # Create window without top controls
+        cv2.namedWindow("Image", cv2.WINDOW_AUTOSIZE)
         scount = 0
         while True:
             success, image = threaded_camera.show_frame()
