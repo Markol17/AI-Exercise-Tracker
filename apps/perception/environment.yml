@@ -1,4 +1,4 @@
-name: vero
+name: vero-perception
 channels:
   - conda-forge
   - pytorch
@@ -10,13 +10,16 @@ dependencies:
   - pillow
   - pip
   - pip:
-    - torch>=2.0.0
-    - torchvision>=0.15.0
-    - ultralytics>=8.0.0
-    - mediapipe>=0.10.0
-    - scipy
-    - requests
-    - websocket-client
-    - python-dotenv
-    - face-recognition
-    - dlib
+      - torch>=2.0.0
+      - torchvision>=0.15.0
+      - ultralytics>=8.0.0
+      - mediapipe>=0.10.0
+      - opencv-python>=4.8.0
+      - numpy>=1.24.0
+      - scipy>=1.11.0
+      - requests>=2.31.0
+      - websocket-client>=1.6.0
+      - python-dotenv>=1.0.0
+      - face-recognition>=1.3.0
+      - dlib>=19.24.0
+      - Pillow>=10.0.0
