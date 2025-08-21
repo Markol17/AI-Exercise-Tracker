@@ -25,8 +25,9 @@ class Pushup(Exercise):
 
     def exercise(self):
         threaded_camera = ThreadedCamera()
-        # Create window without top controls
-        cv2.namedWindow("Image", cv2.WINDOW_AUTOSIZE)
+        # Create regular window with fixed size
+        cv2.namedWindow("Image", cv2.WINDOW_NORMAL)
+        cv2.resizeWindow("Image", 1280, 720)
         scount = 0
         while True:
             success, image = threaded_camera.show_frame()
