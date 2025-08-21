@@ -1,165 +1,80 @@
-import { useCreateSession, useEndSession, useRealtimeEvents } from '@/hooks/api';
+import { useExerciseStats, useMembers } from '@/hooks/api';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
-	// TODO: Replace with proper state management (not Zustand)
-	// This will be implemented with better auth in the @vero/auth package
-	const [currentSession, setCurrentSession] = useState<any>(null);
-	const [currentMember, setCurrentMember] = useState<any>(null);
-
-	// Real-time events using WebSocket
-	const { events, isConnected, connectionStatus, clearEvents, triggerTest } = useRealtimeEvents();
-
-	const createSessionMutation = useCreateSession();
-	const endSessionMutation = useEndSession();
-
-	const startNewSession = async () => {
-		if (!currentMember) {
-			Alert.alert('Error', 'Please select a member first');
-			return;
-		}
-
-		try {
-			const session = await createSessionMutation.mutateAsync({
-				memberId: currentMember.id,
-			});
-			setCurrentSession(session);
-			Alert.alert('Session Started', 'New session created successfully');
-		} catch (error) {
-			Alert.alert('Error', 'Failed to start session');
-		}
-	};
-
-	const endCurrentSession = async () => {
-		if (!currentSession) return;
-
-		try {
-			await endSessionMutation.mutateAsync({ sessionId: currentSession.id });
-			setCurrentSession(null);
-			Alert.alert('Session Ended', 'Session ended successfully');
-		} catch (error) {
-			Alert.alert('Error', 'Failed to end session');
-		}
-	};
+	// Get members data and real-time exercise stats
+	const { data: membersData } = useMembers();
+	const members = membersData?.items || [];
+	const { currentExercise, isConnected } = useExerciseStats();
 
 	const goToMembers = () => {
 		router.push('/members');
 	};
 
-	const goToSession = () => {
-		router.push('/session');
-	};
-
 	return (
 		<ScrollView style={styles.container}>
 			<View style={styles.content}>
-				<Text style={styles.title}>Vero Wellness</Text>
+				<Text style={styles.title}>🏋️ Vero Fitness Tracker</Text>
+				<Text style={styles.subtitle}>AI-Powered Workout Sessions</Text>
 
-				{/* Connection Status */}
+				{/* Perception Status */}
 				<View style={[styles.statusCard, isConnected ? styles.connected : styles.disconnected]}>
-					<Text style={styles.statusText}>{isConnected ? '🟢 Real-time Connected' : '🔴 Real-time Disconnected'}</Text>
-					<Text style={styles.debugText}>
-						Status: {connectionStatus} | Events: {events.length}
+					<Text style={styles.statusText}>
+						{isConnected ? '🟢 Perception Connected' : '🔴 Perception Disconnected'}
 					</Text>
-					<TouchableOpacity style={styles.testButton} onPress={triggerTest}>
-						<Text style={styles.testButtonText}>🧪 Test Event Stream</Text>
-					</TouchableOpacity>
-				</View>
-
-				{/* Current Member */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>Current Member</Text>
-					{currentMember ? (
-						<View>
-							<Text style={styles.memberName}>{currentMember.name}</Text>
-							{currentMember.email && <Text style={styles.memberEmail}>{currentMember.email}</Text>}
-						</View>
-					) : (
-						<Text style={styles.noMember}>No member selected</Text>
+					<Text style={styles.statusSubtext}>
+						{isConnected ? 'Ready for live exercise tracking' : 'Start perception app to connect'}
+					</Text>
+					{currentExercise && (
+						<Text style={styles.currentExercise}>🎯 Current Exercise: {currentExercise.toUpperCase()}</Text>
 					)}
-					<TouchableOpacity style={styles.selectButton} onPress={goToMembers}>
-						<Text style={styles.selectButtonText}>{currentMember ? 'Change Member' : 'Select Member'}</Text>
+				</View>
+
+				{/* Quick Start */}
+				<View style={styles.card}>
+					<Text style={styles.cardTitle}>🚀 Quick Start</Text>
+					<Text style={styles.cardDescription}>
+						Select a member and start a live workout session with AI pose detection
+					</Text>
+					<TouchableOpacity style={styles.startButton} onPress={goToMembers}>
+						<Text style={styles.startButtonText}>Start New Session</Text>
 					</TouchableOpacity>
 				</View>
 
-				{/* Current Session */}
+				{/* Members Overview */}
 				<View style={styles.card}>
-					<Text style={styles.cardTitle}>Current Session</Text>
-					{currentSession ? (
+					<Text style={styles.cardTitle}>👥 Members ({members.length})</Text>
+					{members.length > 0 ? (
 						<View>
-							<Text style={styles.sessionInfo}>Active Session</Text>
-							<Text style={styles.sessionDetail}>
-								Started: {new Date(currentSession.startedAt).toLocaleTimeString()}
+							<Text style={styles.cardDescription}>
+								{members.length} member{members.length !== 1 ? 's' : ''} ready for training
 							</Text>
-							<TouchableOpacity
-								style={styles.endButton}
-								onPress={endCurrentSession}
-								disabled={endSessionMutation.isPending}>
-								<Text style={styles.endButtonText}>{endSessionMutation.isPending ? 'Ending...' : 'End Session'}</Text>
+							<TouchableOpacity style={styles.membersButton} onPress={goToMembers}>
+								<Text style={styles.membersButtonText}>Manage Members</Text>
 							</TouchableOpacity>
 						</View>
 					) : (
 						<View>
-							<Text style={styles.noSession}>No active session</Text>
-							<TouchableOpacity
-								style={[styles.startButton, !currentMember && styles.disabledButton]}
-								onPress={startNewSession}
-								disabled={!currentMember || createSessionMutation.isPending}>
-								<Text style={styles.startButtonText}>
-									{createSessionMutation.isPending ? 'Starting...' : 'Start Session'}
-								</Text>
+							<Text style={styles.cardDescription}>Create your first member to start training</Text>
+							<TouchableOpacity style={styles.membersButton} onPress={goToMembers}>
+								<Text style={styles.membersButtonText}>Add First Member</Text>
 							</TouchableOpacity>
 						</View>
 					)}
 				</View>
 
-				{/* Quick Actions */}
+				{/* Features */}
 				<View style={styles.card}>
-					<Text style={styles.cardTitle}>Quick Actions</Text>
-					<TouchableOpacity
-						style={[styles.actionButton, !currentSession && styles.disabledButton]}
-						onPress={goToSession}
-						disabled={!currentSession}>
-						<Text style={styles.actionButtonText}>View Session Details</Text>
-					</TouchableOpacity>
-				</View>
-
-				{/* Real-time Events */}
-				<View style={styles.card}>
-					<View style={styles.eventsHeader}>
-						<Text style={styles.cardTitle}>Real-time Events ({events.length})</Text>
-						{events.length > 0 && (
-							<TouchableOpacity style={styles.clearButton} onPress={clearEvents}>
-								<Text style={styles.clearButtonText}>Clear</Text>
-							</TouchableOpacity>
-						)}
+					<Text style={styles.cardTitle}>✨ Features</Text>
+					<View style={styles.featuresList}>
+						<Text style={styles.feature}>📹 Live camera feed with pose detection</Text>
+						<Text style={styles.feature}>🔢 Real-time rep counting</Text>
+						<Text style={styles.feature}>⏱️ Exercise duration tracking</Text>
+						<Text style={styles.feature}>🎯 Multiple exercise types support</Text>
+						<Text style={styles.feature}>📊 Session data recording</Text>
 					</View>
-
-					{events.length === 0 ? (
-						<View style={styles.noEventsContainer}>
-							<Text style={styles.noEventsText}>
-								{isConnected ? '📡 Listening for real-time events...' : '🔌 Connecting to event stream...'}
-							</Text>
-						</View>
-					) : (
-						<>
-							{events
-								.slice(-3)
-								.reverse()
-								.map((event, index) => (
-									<View key={index} style={styles.eventItem}>
-										<Text style={styles.eventType}>🔔 {event.type}</Text>
-										<Text style={styles.eventData}>{JSON.stringify(event.data, null, 2)}</Text>
-										<Text style={styles.eventTime}>
-											{new Date(event.data?.timestamp || Date.now()).toLocaleTimeString()}
-										</Text>
-									</View>
-								))}
-							{events.length > 3 && <Text style={styles.moreEvents}>... and {events.length - 3} more events</Text>}
-						</>
-					)}
 				</View>
 			</View>
 		</ScrollView>
@@ -178,28 +93,52 @@ const styles = StyleSheet.create({
 		fontSize: 28,
 		fontWeight: 'bold',
 		textAlign: 'center',
-		marginBottom: 20,
+		marginBottom: 8,
 		color: '#333',
 	},
+	subtitle: {
+		fontSize: 16,
+		textAlign: 'center',
+		marginBottom: 24,
+		color: '#666',
+		fontStyle: 'italic',
+	},
 	statusCard: {
-		padding: 12,
-		borderRadius: 8,
+		padding: 16,
+		borderRadius: 12,
 		marginBottom: 16,
 		alignItems: 'center',
 	},
 	connected: {
 		backgroundColor: '#d4edda',
+		borderWidth: 2,
+		borderColor: '#28a745',
 	},
 	disconnected: {
 		backgroundColor: '#f8d7da',
+		borderWidth: 2,
+		borderColor: '#dc3545',
 	},
 	statusText: {
 		fontSize: 16,
 		fontWeight: '600',
+		marginBottom: 4,
+	},
+	statusSubtext: {
+		fontSize: 14,
+		color: '#666',
+		textAlign: 'center',
+	},
+	currentExercise: {
+		fontSize: 14,
+		fontWeight: '600',
+		color: '#28a745',
+		marginTop: 8,
+		textAlign: 'center',
 	},
 	card: {
 		backgroundColor: 'white',
-		padding: 16,
+		padding: 20,
 		borderRadius: 12,
 		marginBottom: 16,
 		shadowColor: '#000',
@@ -211,8 +150,14 @@ const styles = StyleSheet.create({
 	cardTitle: {
 		fontSize: 18,
 		fontWeight: '600',
-		marginBottom: 12,
+		marginBottom: 8,
 		color: '#333',
+	},
+	cardDescription: {
+		fontSize: 14,
+		color: '#666',
+		marginBottom: 16,
+		lineHeight: 20,
 	},
 	memberName: {
 		fontSize: 16,
@@ -257,117 +202,31 @@ const styles = StyleSheet.create({
 	},
 	startButton: {
 		backgroundColor: '#28a745',
-		padding: 12,
+		padding: 16,
 		borderRadius: 8,
 		alignItems: 'center',
 	},
 	startButtonText: {
 		color: 'white',
 		fontWeight: '600',
+		fontSize: 16,
 	},
-	endButton: {
-		backgroundColor: '#dc3545',
+	membersButton: {
+		backgroundColor: '#4A90E2',
 		padding: 12,
 		borderRadius: 8,
 		alignItems: 'center',
 	},
-	endButtonText: {
+	membersButtonText: {
 		color: 'white',
 		fontWeight: '600',
 	},
-	disabledButton: {
-		backgroundColor: '#ccc',
+	featuresList: {
+		gap: 8,
 	},
-	actionButton: {
-		backgroundColor: '#17a2b8',
-		padding: 12,
-		borderRadius: 8,
-		alignItems: 'center',
-	},
-	actionButtonText: {
-		color: 'white',
-		fontWeight: '600',
-	},
-	testButton: {
-		backgroundColor: '#6c757d',
-		padding: 8,
-		borderRadius: 6,
-		marginTop: 8,
-	},
-	testButtonText: {
-		color: 'white',
-		fontSize: 12,
-		fontWeight: '500',
-	},
-	eventsHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginBottom: 12,
-	},
-	clearButton: {
-		backgroundColor: '#dc3545',
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-		borderRadius: 4,
-	},
-	clearButtonText: {
-		color: 'white',
-		fontSize: 12,
-		fontWeight: '500',
-	},
-	eventItem: {
-		backgroundColor: '#f8f9fa',
-		padding: 12,
-		borderRadius: 6,
-		marginBottom: 8,
-		borderLeftWidth: 3,
-		borderLeftColor: '#28a745',
-	},
-	eventType: {
+	feature: {
 		fontSize: 14,
-		fontWeight: '600',
-		color: '#333',
-		marginBottom: 4,
-	},
-	eventData: {
-		fontSize: 12,
-		color: '#666',
-		fontFamily: 'monospace',
-		marginBottom: 4,
-	},
-	eventTime: {
-		fontSize: 11,
-		color: '#999',
-		textAlign: 'right',
-	},
-	moreEvents: {
-		fontSize: 12,
-		color: '#666',
-		textAlign: 'center',
-		fontStyle: 'italic',
-		marginTop: 8,
-	},
-	errorText: {
-		fontSize: 12,
-		color: '#dc3545',
-		marginTop: 4,
-		textAlign: 'center',
-	},
-	noEventsContainer: {
-		padding: 16,
-		alignItems: 'center',
-	},
-	noEventsText: {
-		fontSize: 14,
-		color: '#666',
-		textAlign: 'center',
-		fontStyle: 'italic',
-	},
-	debugText: {
-		fontSize: 11,
-		color: '#888',
-		textAlign: 'center',
-		marginTop: 4,
+		color: '#555',
+		lineHeight: 20,
 	},
 });

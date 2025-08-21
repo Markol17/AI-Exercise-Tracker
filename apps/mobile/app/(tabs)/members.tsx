@@ -27,15 +27,20 @@ export default function MembersScreen() {
 			await createMemberMutation.mutateAsync({ name: newMemberName });
 			setNewMemberName('');
 			Alert.alert('Success', 'Member created successfully');
-		} catch (error) {
+		} catch {
 			Alert.alert('Error', 'Failed to create member');
 		}
 	};
 
-	const selectMember = (member: any) => {
-		// TODO: Implement member selection state management without Zustand
-		Alert.alert('Member Selected', `Selected ${member.name}`);
-		router.back();
+	const startSession = (member: any) => {
+		// Navigate to live session screen with selected member
+		router.push({
+			pathname: '/live-session',
+			params: {
+				memberId: member.id,
+				memberName: member.name,
+			},
+		});
 	};
 
 	return (
@@ -59,14 +64,19 @@ export default function MembersScreen() {
 				keyExtractor={(item) => item.id}
 				renderItem={({ item }) => (
 					<View style={styles.memberCard}>
-						<TouchableOpacity style={styles.memberInfo} onPress={() => selectMember(item)}>
+						<View style={styles.memberInfo}>
 							<Text style={styles.memberName}>{item.name}</Text>
 							{item.email && <Text style={styles.memberEmail}>{item.email}</Text>}
 							{item.enrolledAt && <Text style={styles.enrollStatus}>✓ Identity Enrolled</Text>}
-						</TouchableOpacity>
-						<TouchableOpacity style={styles.enrollButton} onPress={() => enrollMember(item)}>
-							<Text style={styles.enrollButtonText}>{item.enrolledAt ? 'Update' : 'Enroll'}</Text>
-						</TouchableOpacity>
+						</View>
+						<View style={styles.buttonContainer}>
+							<TouchableOpacity style={styles.enrollButton} onPress={() => enrollMember(item)}>
+								<Text style={styles.enrollButtonText}>{item.enrolledAt ? 'Update' : 'Enroll'}</Text>
+							</TouchableOpacity>
+							<TouchableOpacity style={styles.startSessionButton} onPress={() => startSession(item)}>
+								<Text style={styles.startSessionButtonText}>Start Session</Text>
+							</TouchableOpacity>
+						</View>
 					</View>
 				)}
 				ListEmptyComponent={
@@ -122,6 +132,10 @@ const styles = StyleSheet.create({
 		borderBottomWidth: 1,
 		borderBottomColor: '#e0e0e0',
 	},
+	buttonContainer: {
+		flexDirection: 'row',
+		gap: 8,
+	},
 	memberInfo: {
 		flex: 1,
 	},
@@ -141,13 +155,25 @@ const styles = StyleSheet.create({
 	},
 	enrollButton: {
 		backgroundColor: '#28a745',
-		paddingHorizontal: 16,
+		paddingHorizontal: 12,
 		paddingVertical: 8,
 		borderRadius: 6,
 	},
 	enrollButtonText: {
 		color: 'white',
 		fontWeight: '600',
+		fontSize: 12,
+	},
+	startSessionButton: {
+		backgroundColor: '#4A90E2',
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		borderRadius: 6,
+	},
+	startSessionButtonText: {
+		color: 'white',
+		fontWeight: '600',
+		fontSize: 12,
 	},
 	emptyText: {
 		textAlign: 'center',

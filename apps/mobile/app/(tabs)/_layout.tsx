@@ -28,7 +28,7 @@ export default function TabLayout() {
 				name='index'
 				options={{
 					title: 'Home',
-					headerTitle: 'Home',
+					headerTitle: 'Vero Fitness',
 					tabBarIcon: ({ color }) => <IconSymbol size={28} name='house.fill' color={color} />,
 				}}
 			/>
@@ -36,18 +36,11 @@ export default function TabLayout() {
 				name='members'
 				options={{
 					title: 'Members',
-					headerTitle: 'Members',
+					headerTitle: 'Members & Sessions',
 					tabBarIcon: ({ color }) => <IconSymbol size={28} name='person.2' color={color} />,
 				}}
 			/>
-			<Tabs.Screen
-				name='session'
-				options={{
-					title: 'Session',
-					headerTitle: 'Session',
-					tabBarIcon: ({ color }) => <IconSymbol size={28} name='stopwatch' color={color} />,
-				}}
-			/>
+
 			<Tabs.Screen
 				name='history'
 				options={{
