@@ -1,10 +1,12 @@
+import time
 from threading import Thread
-import cv2, time
+
+import cv2
 
 
-class ThreadedCamera(object):
-    def __init__(self, src=0):
-        self.capture = cv2.VideoCapture(src)
+class ThreadedCamera:
+    def __init__(self):
+        self.capture = cv2.VideoCapture(0)
         self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
         # FPS = 1/X
         # X = desired FPS
