@@ -26,9 +26,13 @@ class ThreadedCamera:
     
     def update(self):
         while self.running:
-            if self.capture.isOpened():
-                (self.status, self.frame) = self.capture.read()
-            time.sleep(self.FPS)
+            try:
+                if self.capture and self.capture.isOpened():
+                    (self.status, self.frame) = self.capture.read()
+                time.sleep(self.FPS)
+            except Exception as e:
+                print(f"Error in camera update loop: {e}")
+                break
 
     def show_frame(self):
         """Return current frame"""
@@ -38,6 +42,17 @@ class ThreadedCamera:
     
     def stop(self):
         """Stop the camera thread"""
+        # Signal thread to stop
         self.running = False
-        if self.capture.isOpened():
+        
+        # Wait for thread to finish (with timeout)
+        if self.thread.is_alive():
+            self.thread.join(timeout=2.0)
+        
+        # Release capture after thread has stopped
+        if self.capture and self.capture.isOpened():
             self.capture.release()
+            self.capture = None
+        
+        # Clear frame reference
+        self.frame = None

@@ -194,29 +194,52 @@ class PerceptionApp:
     async def stop_tracking(self):
         """Stop camera and exercise tracking"""
         self.running = False
+        logger.info("📹 Stopping tracking...")
 
-        # Stop WebRTC streaming
-        if self.webrtc_streamer:
-            await self.webrtc_streamer.stop_streaming()
-            await self.webrtc_streamer.disconnect()
+        # Stop WebRTC streaming first
+        try:
+            if self.webrtc_streamer:
+                await self.webrtc_streamer.stop_streaming()
+                await asyncio.sleep(0.1)  # Small delay to ensure streaming stops
+                await self.webrtc_streamer.disconnect()
+                self.webrtc_streamer = None
+                logger.info("✅ WebRTC streaming stopped")
+        except Exception as e:
+            logger.error(f"Error stopping WebRTC: {e}")
             self.webrtc_streamer = None
 
-        # Stop camera
-        if self.threaded_camera:
-            self.threaded_camera.stop()
-            self.threaded_camera = None
+        # Small delay before cleaning up processor
+        await asyncio.sleep(0.1)
 
-        # Clean up exercise processor
-        if self.exercise_processor:
-            self.exercise_processor.cleanup()
+        # Clean up exercise processor before stopping camera
+        try:
+            if self.exercise_processor:
+                self.exercise_processor.cleanup()
+                self.exercise_processor = None
+                logger.info("✅ Exercise processor cleaned up")
+        except Exception as e:
+            logger.error(f"Error cleaning up exercise processor: {e}")
             self.exercise_processor = None
+
+        # Small delay before stopping camera
+        await asyncio.sleep(0.1)
+
+        # Stop camera last
+        try:
+            if self.threaded_camera:
+                self.threaded_camera.stop()
+                self.threaded_camera = None
+                logger.info("✅ Camera stopped")
+        except Exception as e:
+            logger.error(f"Error stopping camera: {e}")
+            self.threaded_camera = None
 
         # Reset session info
         self.session_id = None
         self.exercise_type = None
         self.member_id = None
 
-        logger.info("📹 Tracking stopped")
+        logger.info("📹 Tracking stopped successfully")
 
     async def send_exercise_stats(self):
         """Send exercise stats periodically to mobile app"""

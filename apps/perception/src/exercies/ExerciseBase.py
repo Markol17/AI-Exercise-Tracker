@@ -161,5 +161,11 @@ class ExerciseBase:
     
     def cleanup(self):
         """Clean up resources"""
-        if self.pose:
-            self.pose.close()
+        try:
+            if hasattr(self, 'pose') and self.pose:
+                self.pose.close()
+                self.pose = None
+        except Exception as e:
+            logger.warning(f"Error closing pose detector: {e}")
+            # Set to None anyway to avoid reuse
+            self.pose = None
