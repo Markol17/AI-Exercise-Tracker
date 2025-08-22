@@ -16,9 +16,6 @@ export default function HomeScreen() {
 	return (
 		<ScrollView style={styles.container}>
 			<View style={styles.content}>
-				<Text style={styles.title}>🏋️ Vero Fitness Tracker</Text>
-				<Text style={styles.subtitle}>AI-Powered Workout Sessions</Text>
-
 				{/* Perception Status */}
 				<View style={[styles.statusCard, isConnected ? styles.connected : styles.disconnected]}>
 					<Text style={styles.statusText}>{isConnected ? '🟢 WebSocket Connected' : '🔴 WebSocket Disconnected'}</Text>
@@ -61,18 +58,6 @@ export default function HomeScreen() {
 							</TouchableOpacity>
 						</View>
 					)}
-				</View>
-
-				{/* Features */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>✨ Features</Text>
-					<View style={styles.featuresList}>
-						<Text style={styles.feature}>📹 Live camera feed with pose detection</Text>
-						<Text style={styles.feature}>🔢 Real-time rep counting</Text>
-						<Text style={styles.feature}>⏱️ Exercise duration tracking</Text>
-						<Text style={styles.feature}>🎯 Multiple exercise types support</Text>
-						<Text style={styles.feature}>📊 Session data recording</Text>
-					</View>
 				</View>
 			</View>
 		</ScrollView>

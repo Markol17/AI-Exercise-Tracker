@@ -44,20 +44,6 @@ export default function MembersScreen() {
 
 	return (
 		<View style={styles.container}>
-			<View style={styles.createSection}>
-				<TextInput
-					style={styles.input}
-					placeholder='Enter member name'
-					value={newMemberName}
-					onChangeText={setNewMemberName}
-				/>
-				<TouchableOpacity style={styles.createButton} onPress={createMember} disabled={createMemberMutation.isPending}>
-					<Text style={styles.createButtonText}>
-						{createMemberMutation.isPending ? 'Creating...' : 'Create Member'}
-					</Text>
-				</TouchableOpacity>
-			</View>
-
 			<FlatList
 				data={members}
 				keyExtractor={(item) => item.id}
@@ -66,7 +52,6 @@ export default function MembersScreen() {
 						<View style={styles.memberInfo}>
 							<Text style={styles.memberName}>{item.name}</Text>
 							{item.email && <Text style={styles.memberEmail}>{item.email}</Text>}
-							{item.enrolledAt && <Text style={styles.enrollStatus}>✓ Identity Enrolled</Text>}
 						</View>
 						<View style={styles.buttonContainer}>
 							{/* <TouchableOpacity style={styles.enrollButton} onPress={() => enrollMember(item)}>
@@ -88,6 +73,19 @@ export default function MembersScreen() {
 					// React Query will automatically refetch when we invalidate
 				}}
 			/>
+			<View style={styles.createSection}>
+				<TextInput
+					style={styles.input}
+					placeholder='Enter member name'
+					value={newMemberName}
+					onChangeText={setNewMemberName}
+				/>
+				<TouchableOpacity style={styles.createButton} onPress={createMember} disabled={createMemberMutation.isPending}>
+					<Text style={styles.createButtonText}>
+						{createMemberMutation.isPending ? 'Creating...' : 'Create Member'}
+					</Text>
+				</TouchableOpacity>
+			</View>
 		</View>
 	);
 }
