@@ -1,20 +1,39 @@
+import { VideoStream } from '@/components/VideoStream';
 import { useExerciseStats } from '@/hooks/api';
+import { useWebRTCVideoStream } from '@/hooks/useWebRTCVideoStream';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ReadyState } from 'react-use-websocket';
 
 export default function LiveSessionScreen() {
-	const { memberName } = useLocalSearchParams<{
+	const { memberId, memberName } = useLocalSearchParams<{
 		memberId: string;
 		memberName: string;
 	}>();
 
 	const [sessionStartTime] = useState<Date>(new Date());
 	const [sessionDuration, setSessionDuration] = useState<string>('00:00');
+	const [sessionId] = useState<string>(() => `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+
+	// TODO: Create actual session with member tracking
+	// const createSessionMutation = useCreateSession();
+	// useEffect(() => {
+	//   createSessionMutation.mutate({
+	//     memberId: memberId,
+	//     metadata: { type: 'workout', startedAt: sessionStartTime }
+	//   });
+	// }, [memberId]);
 
 	// Real-time exercise stats from perception app
 	const { currentExercise, repCount, plankDuration, shoulderTapCount, isConnected, connectionStatus } =
 		useExerciseStats();
+
+	// WebRTC video streaming with integrated WebSocket
+	const { remoteStream, connectionState, isStreaming, startVideoStream, stopVideoStream, webSocketState } =
+		useWebRTCVideoStream({
+			sessionId,
+		});
 
 	// Update session duration every second
 	useEffect(() => {
@@ -29,6 +48,19 @@ export default function LiveSessionScreen() {
 		return () => clearInterval(interval);
 	}, [sessionStartTime]);
 
+	useEffect(() => {
+		if (webSocketState === ReadyState.OPEN) {
+			console.log(`🎥 Auto-starting video stream for session ${sessionId}`);
+			startVideoStream();
+		}
+
+		return () => {
+			if (webSocketState !== ReadyState.OPEN) {
+				stopVideoStream();
+			}
+		};
+	}, [webSocketState, sessionId, startVideoStream, stopVideoStream]);
+
 	const endSession = () => {
 		Alert.alert('End Session', `Are you sure you want to end the session for ${memberName}?`, [
 			{ text: 'Cancel', style: 'cancel' },
@@ -36,7 +68,17 @@ export default function LiveSessionScreen() {
 				text: 'End Session',
 				style: 'destructive',
 				onPress: () => {
-					// TODO: Save session data to backend
+					// TODO: Implement session ending with member tracking
+					// endSessionMutation.mutate({ sessionId });
+					// recordSessionSummary({
+					//   sessionId,
+					//   memberId: memberId,
+					//   duration: sessionDuration,
+					//   exercises: [currentExercise].filter(Boolean),
+					//   stats: { repCount, plankDuration, shoulderTapCount }
+					// });
+
+					console.log(`📝 Ending session ${sessionId} for member ${memberId} (${memberName})`);
 					Alert.alert('Session Ended', `Session for ${memberName} has been completed.`, [
 						{ text: 'OK', onPress: () => router.back() },
 					]);
@@ -47,30 +89,32 @@ export default function LiveSessionScreen() {
 
 	return (
 		<View style={styles.container}>
-			{/* Session Header */}
 			<View style={styles.header}>
 				<View style={styles.sessionInfo}>
 					<Text style={styles.memberName}>{memberName}</Text>
 					<Text style={styles.sessionTime}>Duration: {sessionDuration}</Text>
 				</View>
 
-				{/* Connection Status */}
 				<View style={styles.connectionStatus}>
 					<View style={[styles.statusDot, { backgroundColor: isConnected ? '#28a745' : '#dc3545' }]} />
 					<Text style={[styles.statusText, { color: isConnected ? '#28a745' : '#dc3545' }]}>{connectionStatus}</Text>
 				</View>
 			</View>
 
-			{/* Camera Feed */}
 			<View style={styles.cameraContainer}>
-				{isConnected ? (
+				{isStreaming && remoteStream ? (
+					<VideoStream stream={remoteStream} style={styles.videoStream} objectFit='cover' mirror={false} />
+				) : isConnected ? (
 					<View style={styles.cameraFeed}>
-						{/* Placeholder for camera feed - would integrate with actual perception stream */}
 						<View style={styles.cameraPlaceholder}>
-							<Text style={styles.cameraPlaceholderText}>🎥 Live Camera Feed</Text>
-							<Text style={styles.cameraPlaceholderSubtext}>
-								Connect perception app to see live video with pose detection
-							</Text>
+							<Text style={styles.cameraPlaceholderText}>🎥 Connecting to Camera</Text>
+							<Text style={styles.cameraPlaceholderSubtext}>WebRTC Status: {connectionState}</Text>
+							<Text style={styles.cameraPlaceholderSubtext}>Session: {sessionId}</Text>
+							{webSocketState === ReadyState.OPEN && (
+								<TouchableOpacity style={styles.retryButton} onPress={startVideoStream}>
+									<Text style={styles.retryButtonText}>Retry Connection</Text>
+								</TouchableOpacity>
+							)}
 						</View>
 					</View>
 				) : (
@@ -81,7 +125,6 @@ export default function LiveSessionScreen() {
 				)}
 			</View>
 
-			{/* Real-time Exercise Stats */}
 			{currentExercise && (
 				<View style={styles.exerciseStats}>
 					<Text style={styles.exerciseTitle}>🏋️ {currentExercise.toUpperCase()}</Text>
@@ -106,7 +149,6 @@ export default function LiveSessionScreen() {
 				</View>
 			)}
 
-			{/* Session Controls */}
 			<View style={styles.controls}>
 				<TouchableOpacity style={styles.endSessionButton} onPress={endSession}>
 					<Text style={styles.endSessionButtonText}>End Session</Text>
@@ -246,5 +288,22 @@ const styles = StyleSheet.create({
 		color: 'white',
 		fontSize: 16,
 		fontWeight: 'bold',
+	},
+	videoStream: {
+		width: '100%',
+		height: '100%',
+		backgroundColor: '#000',
+	},
+	retryButton: {
+		backgroundColor: '#007AFF',
+		paddingHorizontal: 16,
+		paddingVertical: 8,
+		borderRadius: 6,
+		marginTop: 12,
+	},
+	retryButtonText: {
+		color: 'white',
+		fontSize: 14,
+		fontWeight: '500',
 	},
 });

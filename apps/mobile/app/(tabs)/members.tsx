@@ -1,5 +1,4 @@
-import { useCreateMember, useEnrollMember, useMembers } from '@/hooks/api';
-import { AppRouterOutput } from '@vero/api';
+import { useCreateMember, useMembers } from '@/hooks/api';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -11,11 +10,11 @@ export default function MembersScreen() {
 	const { data: membersData, isLoading, error } = useMembers();
 	const members = membersData?.items || [];
 	const createMemberMutation = useCreateMember();
-	const enrollMemberMutation = useEnrollMember();
+	// const enrollMemberMutation = useEnrollMember();
 
-	const enrollMember = async (member: AppRouterOutput['members']['create']) => {
-		await enrollMemberMutation.mutateAsync({ memberId: member.id, photoData: '', consent: true });
-	};
+	// const enrollMember = async (member: AppRouterOutput['members']['create']) => {
+	// 	await enrollMemberMutation.mutateAsync({ memberId: member.id, photoData: '', consent: true });
+	// };
 
 	const createMember = async () => {
 		if (!newMemberName.trim()) {
@@ -70,9 +69,9 @@ export default function MembersScreen() {
 							{item.enrolledAt && <Text style={styles.enrollStatus}>✓ Identity Enrolled</Text>}
 						</View>
 						<View style={styles.buttonContainer}>
-							<TouchableOpacity style={styles.enrollButton} onPress={() => enrollMember(item)}>
+							{/* <TouchableOpacity style={styles.enrollButton} onPress={() => enrollMember(item)}>
 								<Text style={styles.enrollButtonText}>{item.enrolledAt ? 'Update' : 'Enroll'}</Text>
-							</TouchableOpacity>
+							</TouchableOpacity> */}
 							<TouchableOpacity style={styles.startSessionButton} onPress={() => startSession(item)}>
 								<Text style={styles.startSessionButtonText}>Start Session</Text>
 							</TouchableOpacity>

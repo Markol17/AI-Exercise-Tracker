@@ -1,7 +1,10 @@
+import asyncio
+
 import mediapipe as mp
 from src.exercies.Exercise import Exercise
 from src.ThreadedCamera import ThreadedCamera
 from src.utils import *
+from src.webrtc_streamer import cleanup_webrtc_streaming, init_webrtc_streaming
 from src.websocket_client import ws_client
 
 mp_drawing = mp.solutions.drawing_utils
@@ -22,9 +25,14 @@ performedPushUp = False
 
 class Pushup(Exercise):
     def __init__(self):
-        pass
+        super().__init__()
 
     def exercise(self):
+        """Synchronous exercise method for backwards compatibility"""
+        # Run async version in sync context
+        asyncio.run(self.exercise_async())
+
+    async def exercise_async(self):
         threaded_camera = ThreadedCamera()
         # Create regular window with fixed size
         cv2.namedWindow("Image", cv2.WINDOW_NORMAL)
@@ -34,6 +42,18 @@ class Pushup(Exercise):
 
         # Connect to WebSocket server
         ws_client.connect()
+
+        # Initialize WebRTC streaming if enabled
+        webrtc_streamer = None
+        if self.enable_webrtc and self.session_id:
+            print(f"🎥 Starting WebRTC streaming for session {self.session_id}")
+            webrtc_streamer = await init_webrtc_streaming(
+                self.session_id, threaded_camera
+            )
+            if webrtc_streamer:
+                print("✅ WebRTC streaming initialized successfully")
+            else:
+                print("❌ Failed to initialize WebRTC streaming")
         while True:
             success, image = threaded_camera.show_frame()
             if not success or image is None:
@@ -352,4 +372,11 @@ class Pushup(Exercise):
             cv2.imshow("Image", rescale_frame(image, percent=100))
             if cv2.waitKey(5) & 0xFF == 27:
                 break
+
+        # Cleanup
         pose.close()
+
+        # Clean up WebRTC streaming
+        if webrtc_streamer:
+            print("🛑 Cleaning up WebRTC streaming")
+            await cleanup_webrtc_streaming()

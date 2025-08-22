@@ -15,21 +15,30 @@ class GymLytics:
         self.shoulderTap = ShoulderTap()
         self.lunges = Lunges()
 
-    def rep(self, type):
+    def rep(self, type, session_id=None, enable_webrtc=False):
+        # Configure session settings for all exercises
+        exercise_obj = None
         if type.lower() == str("pushup"):
-            self.pushup.exercise()
+            exercise_obj = self.pushup
         elif type.lower() == str("squat"):
-            self.squat.exercise()
+            exercise_obj = self.squat
         elif type.lower() == str("plank"):
-            self.plank.exercise()
+            exercise_obj = self.plank
         elif type.lower() == str("shouldertap"):
-            self.shoulderTap.exercise()
+            exercise_obj = self.shoulderTap
         elif type.lower() == str("lunges"):
-            self.lunges.exercise()
+            exercise_obj = self.lunges
         else:
             raise ValueError(
                 f"Input {type} is not correct. \n Kindly refer to the documentation"
             )
+
+        # Configure session settings
+        if exercise_obj:
+            exercise_obj.set_session_config(
+                session_id=session_id, enable_webrtc=enable_webrtc
+            )
+            exercise_obj.exercise()
 
     def interactive_exercise_selection(self):
         """Interactive exercise selection menu"""
@@ -78,20 +87,44 @@ if __name__ == "__main__":
         type=str,
         default=None,
     )
+    parser.add_argument(
+        "--session-id",
+        help="Session ID for WebRTC streaming",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--enable-webrtc",
+        help="Enable WebRTC video streaming",
+        action="store_true",
+        default=False,
+    )
 
     args = parser.parse_args()
 
     # Initialize GymLytics
     gym = GymLytics()
 
+    # Configure session settings if provided
+    if args.session_id or args.enable_webrtc:
+        print(f"🔧 Session configuration:")
+        print(f"  Session ID: {args.session_id}")
+        print(f"  WebRTC enabled: {args.enable_webrtc}")
+
     # Determine exercise type
     if args.type:
         # Use command line argument if provided
         exercise_type = args.type.lower()
         print(f"🎯 Starting {exercise_type.title()} tracking with live camera...")
-        gym.rep(exercise_type)
+        gym.rep(
+            exercise_type, session_id=args.session_id, enable_webrtc=args.enable_webrtc
+        )
     else:
         # Interactive mode
         exercise_type = gym.interactive_exercise_selection()
         if exercise_type:
-            gym.rep(exercise_type)
+            gym.rep(
+                exercise_type,
+                session_id=args.session_id,
+                enable_webrtc=args.enable_webrtc,
+            )

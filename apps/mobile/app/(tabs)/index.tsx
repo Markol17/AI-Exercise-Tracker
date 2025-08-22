@@ -21,9 +21,7 @@ export default function HomeScreen() {
 
 				{/* Perception Status */}
 				<View style={[styles.statusCard, isConnected ? styles.connected : styles.disconnected]}>
-					<Text style={styles.statusText}>
-						{isConnected ? '🟢 Perception Connected' : '🔴 Perception Disconnected'}
-					</Text>
+					<Text style={styles.statusText}>{isConnected ? '🟢 WebSocket Connected' : '🔴 WebSocket Disconnected'}</Text>
 					<Text style={styles.statusSubtext}>
 						{isConnected ? 'Ready for live exercise tracking' : 'Start perception app to connect'}
 					</Text>

@@ -34,8 +34,8 @@ Monorepo Structure:
 
 - **Multi-person tracking**: Simultaneous tracking of multiple people in frame
 - **Pose estimation**: Real-time skeletal keypoint detection
-- **Exercise recognition**: Automatic detection of squats and bicep curls
-- **Rep counting**: Accurate repetition counting based on joint angles
+- **Exercise recognition**: Automatic detection of squats, pushups, lunges, plank, and shoulder taps
+- **Rep counting**: Accurate repetition counting and time tracking based on joint angles and movement patterns
 - **Identity enrollment**: Optional face recognition for member identification
 - **Weight tracking**: Manual weight entry via mobile app
 - **Real-time updates**: WebSocket-based live event streaming
@@ -137,7 +137,9 @@ The Python computer vision service:
 - Captures webcam frames at 30 FPS
 - Detects and tracks multiple people using MediaPipe
 - Extracts pose keypoints for exercise recognition
-- Counts repetitions based on joint angles
+- Supports 5 exercise types: squats, pushups, lunges, plank, and shoulder taps
+- Counts repetitions and tracks time duration based on joint angles and movement patterns
+- Interactive exercise selection menu for live camera tracking
 - Sends real-time events to the TypeScript server
 
 ### Mobile App (`apps/mobile/`)
@@ -196,9 +198,9 @@ npm run db:studio      # Open Drizzle Studio web interface
 2. Open the mobile app on your device/simulator
 3. Create a member
 4. Start a new session
-5. Stand in front of the webcam
-6. Perform squats or bicep curls
-7. Watch real-time rep counting in the app
+5. Start the perception service and select an exercise (squats, pushups, lunges, plank, or shoulder taps)
+6. Stand in front of the webcam and perform the selected exercise
+7. Watch real-time rep counting and exercise tracking in the app
 8. Add weights after completing sets
 
 ## Troubleshooting
