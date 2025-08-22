@@ -1,29 +1,22 @@
 import { VideoStream } from '@/components/VideoStream';
-import { useExerciseStats } from '@/hooks/api';
+import { useEndSession, useExerciseStats } from '@/hooks/api';
 import { useWebRTCVideoStream } from '@/hooks/useWebRTCVideoStream';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ReadyState } from 'react-use-websocket';
+import useWebSocket, { ReadyState } from 'react-use-websocket';
 
 export default function LiveSessionScreen() {
-	const { memberId, memberName } = useLocalSearchParams<{
+	const { sessionId, memberId, memberName, exercise } = useLocalSearchParams<{
+		sessionId: string;
 		memberId: string;
 		memberName: string;
+		exercise: string;
 	}>();
 
 	const [sessionStartTime] = useState<Date>(new Date());
 	const [sessionDuration, setSessionDuration] = useState<string>('00:00');
-	const [sessionId] = useState<string>(() => `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
-
-	// TODO: Create actual session with member tracking
-	// const createSessionMutation = useCreateSession();
-	// useEffect(() => {
-	//   createSessionMutation.mutate({
-	//     memberId: memberId,
-	//     metadata: { type: 'workout', startedAt: sessionStartTime }
-	//   });
-	// }, [memberId]);
+	const endSessionMutation = useEndSession();
 
 	// Real-time exercise stats from perception app
 	const { currentExercise, repCount, plankDuration, shoulderTapCount, isConnected, connectionStatus } =
@@ -32,8 +25,15 @@ export default function LiveSessionScreen() {
 	// WebRTC video streaming with integrated WebSocket
 	const { remoteStream, connectionState, isStreaming, startVideoStream, stopVideoStream, webSocketState } =
 		useWebRTCVideoStream({
-			sessionId,
+			sessionId: sessionId || '',
 		});
+
+
+	// Send exercise type to perception app when connected
+	const { sendJsonMessage } = useWebSocket(process.env.EXPO_PUBLIC_WS_URL || '', {
+		share: true,
+		shouldReconnect: () => true,
+	});
 
 	// Update session duration every second
 	useEffect(() => {
@@ -48,18 +48,25 @@ export default function LiveSessionScreen() {
 		return () => clearInterval(interval);
 	}, [sessionStartTime]);
 
+	// Send session start message once when ready
 	useEffect(() => {
-		if (webSocketState === ReadyState.OPEN) {
-			console.log(`🎥 Auto-starting video stream for session ${sessionId}`);
-			startVideoStream();
+		if (webSocketState === ReadyState.OPEN && sessionId && exercise) {
+			// Send session start message with exercise type
+			sendJsonMessage({
+				type: 'session_start',
+				sessionId,
+				exercise,
+				memberId,
+			});
 		}
+	}, [webSocketState, sessionId, exercise, memberId, sendJsonMessage]);
 
+	// Clean up on unmount
+	useEffect(() => {
 		return () => {
-			if (webSocketState !== ReadyState.OPEN) {
-				stopVideoStream();
-			}
+			stopVideoStream();
 		};
-	}, [webSocketState, sessionId, startVideoStream, stopVideoStream]);
+	}, [stopVideoStream]);
 
 	const endSession = () => {
 		Alert.alert('End Session', `Are you sure you want to end the session for ${memberName}?`, [
@@ -67,21 +74,29 @@ export default function LiveSessionScreen() {
 			{
 				text: 'End Session',
 				style: 'destructive',
-				onPress: () => {
-					// TODO: Implement session ending with member tracking
-					// endSessionMutation.mutate({ sessionId });
-					// recordSessionSummary({
-					//   sessionId,
-					//   memberId: memberId,
-					//   duration: sessionDuration,
-					//   exercises: [currentExercise].filter(Boolean),
-					//   stats: { repCount, plankDuration, shoulderTapCount }
-					// });
+				onPress: async () => {
+					try {
+						// Stop video stream first
+						stopVideoStream();
 
-					console.log(`📝 Ending session ${sessionId} for member ${memberId} (${memberName})`);
-					Alert.alert('Session Ended', `Session for ${memberName} has been completed.`, [
-						{ text: 'OK', onPress: () => router.back() },
-					]);
+						// Send session end message
+						sendJsonMessage({
+							type: 'session_end',
+							sessionId,
+						});
+
+						// End session in database
+						if (sessionId) {
+							await endSessionMutation.mutateAsync({ sessionId });
+						}
+
+						Alert.alert('Session Ended', `Session for ${memberName} has been completed.`, [
+							{ text: 'OK', onPress: () => router.replace('/(tabs)') },
+						]);
+					} catch (error) {
+						console.error('Failed to end session:', error);
+						Alert.alert('Error', 'Failed to end session properly');
+					}
 				},
 			},
 		]);
@@ -92,6 +107,7 @@ export default function LiveSessionScreen() {
 			<View style={styles.header}>
 				<View style={styles.sessionInfo}>
 					<Text style={styles.memberName}>{memberName}</Text>
+					<Text style={styles.exerciseType}>📊 {exercise?.toUpperCase()}</Text>
 					<Text style={styles.sessionTime}>Duration: {sessionDuration}</Text>
 				</View>
 
@@ -103,13 +119,50 @@ export default function LiveSessionScreen() {
 
 			<View style={styles.cameraContainer}>
 				{isStreaming && remoteStream ? (
-					<VideoStream stream={remoteStream} style={styles.videoStream} objectFit='cover' mirror={false} />
+					<View style={styles.videoContainer}>
+						<VideoStream stream={remoteStream} style={styles.videoStream} objectFit='cover' mirror={false} />
+						{/* Debug Overlay */}
+						<View style={styles.debugOverlay}>
+							<View style={styles.debugHeader}>
+								<Text style={styles.debugTitle}>🎯 {exercise?.toUpperCase()}</Text>
+								<Text style={styles.debugSession}>Session: {sessionId?.slice(0, 8)}...</Text>
+							</View>
+							<View style={styles.debugStats}>
+								{exercise === 'plank' ? (
+									<>
+										<View style={styles.debugStatItem}>
+											<Text style={styles.debugStatValue}>{plankDuration.toFixed(1)}</Text>
+											<Text style={styles.debugStatLabel}>seconds</Text>
+										</View>
+									</>
+								) : exercise === 'shouldertap' ? (
+									<>
+										<View style={styles.debugStatItem}>
+											<Text style={styles.debugStatValue}>{shoulderTapCount}</Text>
+											<Text style={styles.debugStatLabel}>taps</Text>
+										</View>
+									</>
+								) : (
+									<>
+										<View style={styles.debugStatItem}>
+											<Text style={styles.debugStatValue}>{repCount}</Text>
+											<Text style={styles.debugStatLabel}>reps</Text>
+										</View>
+									</>
+								)}
+								<View style={styles.debugStatItem}>
+									<Text style={styles.debugStatValue}>{sessionDuration}</Text>
+									<Text style={styles.debugStatLabel}>duration</Text>
+								</View>
+							</View>
+						</View>
+					</View>
 				) : isConnected ? (
 					<View style={styles.cameraFeed}>
 						<View style={styles.cameraPlaceholder}>
 							<Text style={styles.cameraPlaceholderText}>🎥 Connecting to Camera</Text>
 							<Text style={styles.cameraPlaceholderSubtext}>WebRTC Status: {connectionState}</Text>
-							<Text style={styles.cameraPlaceholderSubtext}>Session: {sessionId}</Text>
+							<Text style={styles.cameraPlaceholderSubtext}>Exercise: {exercise}</Text>
 							{webSocketState === ReadyState.OPEN && (
 								<TouchableOpacity style={styles.retryButton} onPress={startVideoStream}>
 									<Text style={styles.retryButtonText}>Retry Connection</Text>
@@ -178,6 +231,12 @@ const styles = StyleSheet.create({
 		fontWeight: 'bold',
 		color: 'white',
 		marginBottom: 4,
+	},
+	exerciseType: {
+		fontSize: 14,
+		color: '#4CAF50',
+		fontWeight: '600',
+		marginBottom: 2,
 	},
 	sessionTime: {
 		fontSize: 14,
@@ -289,10 +348,56 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		fontWeight: 'bold',
 	},
+	videoContainer: {
+		width: '100%',
+		height: '100%',
+		position: 'relative',
+	},
 	videoStream: {
 		width: '100%',
 		height: '100%',
 		backgroundColor: '#000',
+	},
+	debugOverlay: {
+		position: 'absolute',
+		top: 10,
+		left: 10,
+		right: 10,
+		backgroundColor: 'rgba(0, 0, 0, 0.7)',
+		borderRadius: 8,
+		padding: 12,
+	},
+	debugHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		marginBottom: 8,
+	},
+	debugTitle: {
+		color: '#4CAF50',
+		fontSize: 16,
+		fontWeight: 'bold',
+	},
+	debugSession: {
+		color: '#999',
+		fontSize: 12,
+	},
+	debugStats: {
+		flexDirection: 'row',
+		justifyContent: 'space-around',
+	},
+	debugStatItem: {
+		alignItems: 'center',
+	},
+	debugStatValue: {
+		color: '#fff',
+		fontSize: 24,
+		fontWeight: 'bold',
+	},
+	debugStatLabel: {
+		color: '#999',
+		fontSize: 10,
+		textTransform: 'uppercase',
+		marginTop: 2,
 	},
 	retryButton: {
 		backgroundColor: '#007AFF',

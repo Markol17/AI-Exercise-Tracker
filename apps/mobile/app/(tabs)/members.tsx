@@ -32,9 +32,9 @@ export default function MembersScreen() {
 	};
 
 	const startSession = (member: any) => {
-		// Navigate to live session screen with selected member
+		// Navigate to exercise selection screen first
 		router.push({
-			pathname: '/live-session',
+			pathname: '/exercise-selection',
 			params: {
 				memberId: member.id,
 				memberName: member.name,

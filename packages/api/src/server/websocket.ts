@@ -33,6 +33,12 @@ export function initWebSocketServer(port: number) {
 					handleRegisterClient(clientId, message);
 				} else if (message.type === 'webrtc_signaling') {
 					handleWebRTCSignaling(clientId, message);
+				} else if (message.type === 'session_start') {
+					handleSessionStart(clientId, message);
+				} else if (message.type === 'session_end') {
+					handleSessionEnd(clientId, message);
+				} else if (message.type === 'exercise_stats') {
+					handleExerciseStats(clientId, message);
 				} else {
 					// Legacy message handling
 					const enrichedMessage = {
@@ -66,19 +72,23 @@ function handleRegisterClient(clientId: string, message: any) {
 	if (connection) {
 		connection.sessionId = message.sessionId;
 		connection.role = message.role;
-		console.log(`📱 Client ${clientId} registered as ${message.role} for session ${message.sessionId}`);
-
-		// Notify other clients in the same session
-		broadcastToSession(
-			message.sessionId,
-			{
-				type: 'client_registered',
-				clientId,
-				role: message.role,
-				timestamp: new Date().toISOString(),
-			},
-			clientId
-		);
+		
+		if (message.sessionId) {
+			console.log(`📱 Client ${clientId} registered as ${message.role} for session ${message.sessionId}`);
+			// Notify other clients in the same session
+			broadcastToSession(
+				message.sessionId,
+				{
+					type: 'client_registered',
+					clientId,
+					role: message.role,
+					timestamp: new Date().toISOString(),
+				},
+				clientId
+			);
+		} else {
+			console.log(`📱 Client ${clientId} registered as ${message.role} (no session yet)`);
+		}
 	}
 }
 
@@ -112,6 +122,69 @@ function handleWebRTCSignaling(clientId: string, message: any) {
 	}
 
 	console.warn(`No ${targetRole} client found in session ${sessionId}`);
+}
+
+// Handle session start message - forward to perception app
+function handleSessionStart(clientId: string, message: any) {
+	const { sessionId, exercise, memberId } = message;
+	console.log(`🚀 Session start: ${sessionId} for member ${memberId}, exercise: ${exercise}`);
+	
+	// Forward to all perception clients (they will filter by sessionId if needed)
+	for (const [otherClientId, connection] of connections.entries()) {
+		if (connection.role === 'perception') {
+			connection.ws.send(JSON.stringify({
+				type: 'session_start',
+				sessionId,
+				exercise,
+				memberId,
+				timestamp: new Date().toISOString(),
+			}));
+			console.log(`✅ Forwarded session start to perception client ${otherClientId}`);
+			
+			// Update the perception client's sessionId
+			connection.sessionId = sessionId;
+		}
+	}
+}
+
+// Handle session end message - forward to perception app
+function handleSessionEnd(clientId: string, message: any) {
+	const { sessionId } = message;
+	console.log(`🛑 Session end: ${sessionId}`);
+	
+	// Forward to all perception clients in this session
+	for (const [otherClientId, connection] of connections.entries()) {
+		if (connection.role === 'perception' && connection.sessionId === sessionId) {
+			connection.ws.send(JSON.stringify({
+				type: 'session_end',
+				sessionId,
+				timestamp: new Date().toISOString(),
+			}));
+			console.log(`✅ Forwarded session end to perception client ${otherClientId}`);
+		}
+	}
+}
+
+// Handle exercise stats from perception app
+function handleExerciseStats(clientId: string, message: any) {
+	const connection = connections.get(clientId);
+	if (!connection?.sessionId) {
+		return;
+	}
+	
+	const { sessionId, stats } = message;
+	
+	// Forward stats to all mobile clients in this session
+	for (const [otherClientId, otherConnection] of connections.entries()) {
+		if (otherConnection.role === 'mobile' && otherConnection.sessionId === sessionId) {
+			otherConnection.ws.send(JSON.stringify({
+				type: 'exercise_stats',
+				sessionId,
+				stats,
+				timestamp: new Date().toISOString(),
+			}));
+		}
+	}
 }
 
 // Broadcast to all clients in a specific session

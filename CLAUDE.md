@@ -190,7 +190,7 @@ The design has been architected to evolve cleanly to **multi-camera** and **sens
 - All oRPC procedures exposed as REST endpoints with validation
 - Authentication ready (bearer token schema defined)
 
-### Real-time WebSocket (`ws://localhost:3001`)
+### Real-time WebSocket (`ws://192.168.1.103:3001`)
 
 - Session-scoped event streaming for live UI updates
 - Connection management with heartbeat and reconnection
@@ -423,7 +423,7 @@ NODE_ENV=development
 
 ```bash
 API_BASE_URL=http://localhost:3000/rpc
-WS_URL=ws://localhost:3001
+WS_URL=ws://192.168.1.103:3001
 INGESTION_SECRET=your-secret-token
 CAMERA_INDEX=0
 FRAME_RATE=30

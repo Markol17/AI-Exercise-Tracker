@@ -7,7 +7,7 @@ import websocket
 
 
 class ExerciseWebSocketClient:
-    def __init__(self, ws_url: str = "ws://localhost:3001"):
+    def __init__(self, ws_url: str = "ws://192.168.1.103:3001"):
         self.ws_url = ws_url
         self.ws: Optional[websocket.WebSocket] = None
         self.connected = False

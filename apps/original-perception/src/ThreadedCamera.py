@@ -1,10 +1,8 @@
-import time
 from threading import Thread
+import cv2, time
 
-import cv2
 
-
-class ThreadedCamera:
+class ThreadedCamera(object):
     def __init__(self, src=0):
         self.capture = cv2.VideoCapture(src)
         self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
@@ -17,27 +15,13 @@ class ThreadedCamera:
         self.thread = Thread(target=self.update, args=())
         self.frame = None
         self.thread.daemon = True
-        self.running = True
+        self.thread.start()
 
-    def start(self):
-        """Start the camera thread"""
-        if not self.thread.is_alive():
-            self.thread.start()
-    
     def update(self):
-        while self.running:
+        while True:
             if self.capture.isOpened():
                 (self.status, self.frame) = self.capture.read()
             time.sleep(self.FPS)
 
     def show_frame(self):
-        """Return current frame"""
-        if self.frame is not None:
-            return True, self.frame
-        return False, None
-    
-    def stop(self):
-        """Stop the camera thread"""
-        self.running = False
-        if self.capture.isOpened():
-            self.capture.release()
+        return self.FPS_MS, self.frame

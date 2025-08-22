@@ -44,9 +44,11 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		},
 	});
 
-	// Send WebRTC signaling message
-	const sendSignaling = useCallback(
-		(type: string, data: any) => {
+	// Send WebRTC signaling message - use ref to avoid recreating
+	const sendSignalingRef = useRef<(type: string, data: any) => void>();
+	
+	useEffect(() => {
+		sendSignalingRef.current = (type: string, data: any) => {
 			const message = {
 				type: 'webrtc_signaling',
 				targetRole: 'perception',
@@ -56,10 +58,13 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 				},
 			};
 			sendJsonMessage(message);
-			console.log(`📡 Sent ${type} signaling`);
-		},
-		[sendJsonMessage]
-	);
+		};
+	}, [sendJsonMessage]);
+
+	// Stable sendSignaling function that won't cause re-renders  
+	const sendSignaling = useCallback((type: string, data: any) => {
+		sendSignalingRef.current?.(type, data);
+	}, []);
 
 	// Initialize peer connection
 	const initializePeerConnection = useCallback(() => {
@@ -70,16 +75,17 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		const pc = new RTCPeerConnection(pcConfig);
 		pcRef.current = pc;
 
+		// Add transceiver for receiving video
+		pc.addTransceiver('video', { direction: 'recvonly' });
+
 		// Handle connection state changes
 		// @ts-expect-error https://github.com/react-native-webrtc/react-native-webrtc/issues/1700#issue-3038071935
 		pc.addEventListener('connectionstatechange', () => {
 			const state = pc.connectionState;
 			setConnectionState(state);
-			console.log(`🔄 WebRTC connection state: ${state}`);
 
 			if (state === 'connected') {
 				setIsStreaming(true);
-				console.log('✅ WebRTC connection established');
 			} else if (state === 'disconnected' || state === 'failed') {
 				setIsStreaming(false);
 				setRemoteStream(null);
@@ -98,10 +104,18 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 			}
 		});
 
-		// Handle remote stream - use addstream for React Native WebRTC
+		// Handle remote stream - try both track and addstream events
+		// @ts-expect-error https://github.com/react-native-webrtc/react-native-webrtc/issues/1700#issue-3038071935
+		pc.addEventListener('track', (event: any) => {
+			if (event.streams && event.streams[0]) {
+				setRemoteStream(event.streams[0]);
+				setIsStreaming(true);
+			}
+		});
+
+		// Also listen for addstream as fallback
 		// @ts-expect-error https://github.com/react-native-webrtc/react-native-webrtc/issues/1700#issue-3038071935
 		pc.addEventListener('addstream', (event: any) => {
-			console.log('📺 Received remote video stream');
 			if (event.stream) {
 				setRemoteStream(event.stream);
 				setIsStreaming(true);
@@ -109,40 +123,55 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		});
 
 		return pc;
-	}, [pcConfig, sendSignaling]);
+	}, [pcConfig]); // Remove sendSignaling from deps since it's now stable
 
 	// Handle incoming signaling messages
 	const handleSignaling = useCallback(
 		async (signaling: any) => {
 			const { type, data } = signaling;
-			console.log(`📨 Received ${type} signaling`);
 
 			try {
 				if (type === 'offer') {
-					// Initialize peer connection if needed
-					if (!pcRef.current) {
-						initializePeerConnection();
+					// Close any existing connection
+					if (pcRef.current) {
+						pcRef.current.close();
+						pcRef.current = null;
+						setRemoteStream(null);
+						setIsStreaming(false);
 					}
 
-					const pc = pcRef.current!;
+					// Create new peer connection for this offer
+					const pc = initializePeerConnection();
+					
+					try {
+						// Set remote description
+						const offer = new RTCSessionDescription(data);
+						await pc.setRemoteDescription(offer);
 
-					// Set remote description
-					const offer = new RTCSessionDescription(data);
-					await pc.setRemoteDescription(offer);
+						// Check state before creating answer
+						if (pc.signalingState === 'have-remote-offer') {
+							// Create and send answer
+							const answer = await pc.createAnswer();
+							await pc.setLocalDescription(answer);
 
-					// Create and send answer
-					const answer = await pc.createAnswer();
-					await pc.setLocalDescription(answer);
-
-					sendSignaling('answer', {
-						type: answer.type,
-						sdp: answer.sdp,
-					});
-
-					console.log('✅ Sent answer to perception app');
+							sendSignaling('answer', {
+								type: answer.type,
+								sdp: answer.sdp,
+							});
+						} else {
+							console.error(`Cannot create answer, signaling state is: ${pc.signalingState}`);
+						}
+					} catch (err) {
+						console.error('Error handling offer:', err);
+						// Clean up on error
+						if (pcRef.current) {
+							pcRef.current.close();
+							pcRef.current = null;
+						}
+					}
 				} else if (type === 'ice-candidate') {
 					// Add ICE candidate
-					if (pcRef.current) {
+					if (pcRef.current && pcRef.current.remoteDescription) {
 						const candidate = new RTCIceCandidate({
 							candidate: data.candidate,
 							sdpMid: data.sdpMid,
@@ -150,13 +179,15 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 						});
 						await pcRef.current.addIceCandidate(candidate);
 						console.log('🧊 Added ICE candidate');
+					} else {
+						console.warn('⚠️ Received ICE candidate but no remote description set yet');
 					}
 				}
 			} catch (error) {
 				console.error(`Error handling ${type} signaling:`, error);
 			}
 		},
-		[sendSignaling, initializePeerConnection]
+		[initializePeerConnection, sendSignaling] // Both are now stable
 	);
 
 	// Register as mobile client when WebSocket connects
@@ -169,7 +200,6 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 			};
 			sendJsonMessage(registerMessage);
 			isRegistered.current = true;
-			console.log(`📱 Registered as mobile client for session ${sessionId}`);
 		}
 
 		// Reset registration flag when disconnected
@@ -179,17 +209,13 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 	}, [readyState, sessionId, sendJsonMessage]);
 
 	// Start video stream request
-	const startVideoStream = () => {
-		if (readyState === ReadyState.OPEN && isRegistered.current) {
-			initializePeerConnection();
-			console.log('🎥 Requesting video stream from perception app');
-		} else {
-			console.warn('Cannot start stream: WebSocket not connected or not registered');
-		}
-	};
+	const startVideoStream = useCallback(() => {
+		// This function is kept for compatibility but doesn't need to do anything
+		// The connection is established when we receive an offer from perception
+	}, []);
 
 	// Stop video stream
-	const stopVideoStream = () => {
+	const stopVideoStream = useCallback(() => {
 		if (pcRef.current) {
 			pcRef.current.close();
 			pcRef.current = null;
@@ -197,15 +223,18 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		setRemoteStream(null);
 		setIsStreaming(false);
 		setConnectionState('new');
-		console.log('🛑 Stopped video stream');
-	};
+	}, []);
 
 	// Cleanup on unmount
 	useEffect(() => {
 		return () => {
-			stopVideoStream();
+			// Clean up peer connection on unmount
+			if (pcRef.current) {
+				pcRef.current.close();
+				pcRef.current = null;
+			}
 		};
-	}, []);
+	}, []); // No dependencies - only run on unmount
 
 	return {
 		remoteStream,

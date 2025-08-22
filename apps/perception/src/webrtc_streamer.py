@@ -1,4 +1,5 @@
 import asyncio
+import fractions
 import json
 import logging
 import time
@@ -25,9 +26,10 @@ logger = logging.getLogger(__name__)
 class OpenCVVideoTrack(VideoStreamTrack):
     """Custom video track that streams OpenCV frames via WebRTC"""
 
-    def __init__(self, threaded_camera):
+    def __init__(self, threaded_camera, exercise_processor=None):
         super().__init__()
         self.threaded_camera = threaded_camera
+        self.exercise_processor = exercise_processor
         self.frame_count = 0
         self.start_time = time.time()
 
@@ -42,6 +44,14 @@ class OpenCVVideoTrack(VideoStreamTrack):
         if not success or frame is None:
             # Return black frame if no camera data
             frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        else:
+            # Process frame with exercise tracking if processor is available
+            if self.exercise_processor:
+                try:
+                    frame, stats = self.exercise_processor.process_frame(frame)
+                    # Stats could be sent via WebSocket if needed
+                except Exception as e:
+                    logger.error(f"Error processing frame: {e}")
 
         # Ensure frame is in the right format (RGB)
         if len(frame.shape) == 3 and frame.shape[2] == 3:
@@ -51,7 +61,7 @@ class OpenCVVideoTrack(VideoStreamTrack):
         # Create VideoFrame
         av_frame = VideoFrame.from_ndarray(frame, format="rgb24")
         av_frame.pts = pts
-        av_frame.time_base = 1 / 90000
+        av_frame.time_base = fractions.Fraction(1, 90000)  # Use Fraction for time_base
 
         self.frame_count += 1
         return av_frame
@@ -60,9 +70,10 @@ class OpenCVVideoTrack(VideoStreamTrack):
 class WebRTCStreamer:
     """WebRTC video streamer for perception app"""
 
-    def __init__(self, ws_url: str = "ws://localhost:3001", session_id: str = None):
+    def __init__(self, ws_url: str = "ws://192.168.1.103:3001", session_id: str = None, exercise_processor=None):
         self.ws_url = ws_url
         self.session_id = session_id
+        self.exercise_processor = exercise_processor
         self.ws = None
         self.pc = None
         self.video_track = None
@@ -112,9 +123,10 @@ class WebRTCStreamer:
             configuration = RTCConfiguration([])  # No ICE servers for local connections
             self.pc = RTCPeerConnection(configuration)
 
-            # Create video track from camera
-            self.video_track = OpenCVVideoTrack(threaded_camera)
+            # Create video track from camera with exercise processor
+            self.video_track = OpenCVVideoTrack(threaded_camera, self.exercise_processor)
             self.pc.addTrack(self.video_track)
+            logger.info(f"📹 Added video track to peer connection")
 
             # Set up ICE candidate handling
             @self.pc.on("icecandidate")
@@ -168,13 +180,23 @@ class WebRTCStreamer:
 
         elif signal_type == "ice-candidate":
             # Handle ICE candidate from mobile app
-            candidate = RTCIceCandidate(
-                candidate=data["candidate"],
-                sdpMid=data["sdpMid"],
-                sdpMLineIndex=data["sdpMLineIndex"],
-            )
-            await self.pc.addIceCandidate(candidate)
-            logger.info("🧊 Added ICE candidate from mobile")
+            if data.get("candidate"):
+                try:
+                    # aiortc expects the candidate to be parsed from the candidate string
+                    from aiortc import RTCIceCandidate as IceCandidate
+                    from aiortc.sdp import candidate_from_sdp
+                    
+                    # Parse the candidate string
+                    ice_candidate = candidate_from_sdp(data.get("candidate"))
+                    ice_candidate.sdpMid = data.get("sdpMid")
+                    ice_candidate.sdpMLineIndex = data.get("sdpMLineIndex")
+                    
+                    await self.pc.addIceCandidate(ice_candidate)
+                    logger.info("🧊 Added ICE candidate from mobile")
+                except Exception as e:
+                    logger.error(f"Failed to add ICE candidate: {e}")
+            else:
+                logger.info("📭 Received end-of-candidates signal")
 
     async def listen_for_signaling(self):
         """Listen for WebRTC signaling messages"""
@@ -201,7 +223,10 @@ class WebRTCStreamer:
         self.streaming = False
 
         if self.pc:
-            await self.pc.close()
+            try:
+                await self.pc.close()
+            except Exception as e:
+                logger.error(f"Error closing peer connection: {e}")
             self.pc = None
 
         if self.video_track:

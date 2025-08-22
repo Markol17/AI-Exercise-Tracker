@@ -19,6 +19,30 @@ export function useCreateMember() {
 	);
 }
 
+export function useCreateSession() {
+	const queryClient = useQueryClient();
+
+	return useMutation(
+		reactQueryApiClient.sessions.create.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({ queryKey: ['sessions'] });
+			},
+		})
+	);
+}
+
+export function useEndSession() {
+	const queryClient = useQueryClient();
+
+	return useMutation(
+		reactQueryApiClient.sessions.end.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({ queryKey: ['sessions'] });
+			},
+		})
+	);
+}
+
 export function useExerciseStats() {
 	if (!process.env.EXPO_PUBLIC_WS_URL) {
 		throw new Error('EXPO_PUBLIC_WS_URL is not set');
@@ -37,18 +61,28 @@ export function useExerciseStats() {
 		onMessage: (event) => {
 			try {
 				const data = JSON.parse(event.data);
-				console.log('🏋️ Exercise stats received:', data);
 
-				if (data.type === 'exercise_stats') {
-					const { exercise, data: exerciseData } = data;
-					setCurrentExercise(exercise);
-
-					if (exerciseData.type === 'rep_count') {
-						setRepCount(exerciseData.count);
-					} else if (exerciseData.type === 'duration') {
-						setPlankDuration(exerciseData.duration);
-					} else if (exerciseData.type === 'tap_count') {
-						setShouldertapCount(exerciseData.count);
+				if (data.type === 'exercise_stats' && data.stats) {
+					const { stats } = data;
+					
+					// Update current exercise
+					if (stats.exercise) {
+						setCurrentExercise(stats.exercise);
+					}
+					
+					// Update rep count
+					if (typeof stats.rep_count === 'number') {
+						setRepCount(stats.rep_count);
+					}
+					
+					// Update plank duration
+					if (typeof stats.plank_duration === 'number') {
+						setPlankDuration(stats.plank_duration);
+					}
+					
+					// Update shoulder tap count
+					if (typeof stats.shoulder_tap_count === 'number') {
+						setShouldertapCount(stats.shoulder_tap_count);
 					}
 				}
 			} catch (error) {
@@ -68,37 +102,14 @@ export function useExerciseStats() {
 	}[readyState];
 
 	useEffect(() => {
-		if (currentExercise !== null) {
-			const exerciseStateMap = {
-				plank: {
-					type: 'duration',
-					setter: setPlankDuration,
-				},
-				shouldertap: {
-					type: 'tap_count',
-					setter: setShouldertapCount,
-				},
-				pushup: {
-					type: 'rep_count',
-					setter: setRepCount,
-				},
-				squat: {
-					type: 'rep_count',
-					setter: setRepCount,
-				},
-				lunges: {
-					type: 'rep_count',
-					setter: setRepCount,
-				},
-			} as const;
-
-			Object.entries(exerciseStateMap).forEach(([exercise, { setter }]) => {
-				if (exercise !== currentExercise) {
-					setter(0);
-				}
-			});
+		// Reset stats when disconnected
+		if (readyState !== ReadyState.OPEN) {
+			setCurrentExercise(null);
+			setRepCount(0);
+			setPlankDuration(0);
+			setShouldertapCount(0);
 		}
-	}, [currentExercise]);
+	}, [readyState]);
 
 	return {
 		currentExercise,

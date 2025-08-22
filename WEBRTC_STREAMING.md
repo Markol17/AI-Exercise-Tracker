@@ -193,7 +193,7 @@ The mobile app automatically handles WebRTC connections:
 #### Perception App Logs
 
 ```
-✅ Connected to signaling server at ws://localhost:3001
+✅ Connected to signaling server at ws://192.168.1.103:3001
 📱 Registered as perception client for session session-abc123
 🎥 Started WebRTC video streaming
 📡 Sent offer signaling
