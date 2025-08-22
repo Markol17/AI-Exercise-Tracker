@@ -1,14 +1,14 @@
 import { useCreateSession } from '@/hooks/api';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const EXERCISES = [
-	{ id: 'squat', name: 'Squats', icon: '🏋️', description: 'Lower body strength' },
-	{ id: 'pushup', name: 'Push-ups', icon: '💪', description: 'Upper body strength' },
-	{ id: 'lunges', name: 'Lunges', icon: '🦵', description: 'Single leg strength' },
-	{ id: 'plank', name: 'Plank', icon: '🧘', description: 'Core stability (timed)' },
-	{ id: 'shouldertap', name: 'Shoulder Taps', icon: '🤸', description: 'Core and stability' },
+	{ id: 'squat', name: 'Squats', description: 'Lower body strength' },
+	{ id: 'pushup', name: 'Push-ups', description: 'Upper body strength' },
+	{ id: 'lunges', name: 'Lunges', description: 'Single leg strength' },
+	{ id: 'plank', name: 'Plank', description: 'Core stability' },
+	{ id: 'shouldertap', name: 'Shoulder Taps', description: 'Core stability' },
 ];
 
 export default function ExerciseSelectionScreen() {
@@ -53,49 +53,48 @@ export default function ExerciseSelectionScreen() {
 	};
 
 	return (
-		<ScrollView style={styles.container}>
-			<View style={styles.header}>
-				<Text style={styles.title}>Select Exercise</Text>
-				<Text style={styles.subtitle}>Choose which exercise to track for {memberName}</Text>
-			</View>
+		<SafeAreaView style={styles.container}>
+			<ScrollView style={styles.container}>
+				<View style={styles.header}>
+					<Text style={styles.title}>Select Exercise</Text>
+					<Text style={styles.subtitle}>Choose which exercise to track for {memberName}</Text>
+				</View>
 
-			<View style={styles.exerciseGrid}>
-				{EXERCISES.map((exercise) => (
+				<View style={styles.exerciseGrid}>
+					{EXERCISES.map((exercise) => (
+						<TouchableOpacity
+							key={exercise.id}
+							style={[styles.exerciseCard, selectedExercise === exercise.id && styles.exerciseCardSelected]}
+							onPress={() => setSelectedExercise(exercise.id)}>
+							<Text style={[styles.exerciseName, selectedExercise === exercise.id && styles.exerciseNameSelected]}>
+								{exercise.name}
+							</Text>
+							<Text style={styles.exerciseDescription}>{exercise.description}</Text>
+							{selectedExercise === exercise.id && (
+								<View style={styles.selectedBadge}>
+									<Text style={styles.selectedBadgeText}>✓ Selected</Text>
+								</View>
+							)}
+						</TouchableOpacity>
+					))}
+				</View>
+
+				<View style={styles.footer}>
 					<TouchableOpacity
-						key={exercise.id}
-						style={[styles.exerciseCard, selectedExercise === exercise.id && styles.exerciseCardSelected]}
-						onPress={() => setSelectedExercise(exercise.id)}
-					>
-						<Text style={styles.exerciseIcon}>{exercise.icon}</Text>
-						<Text style={[styles.exerciseName, selectedExercise === exercise.id && styles.exerciseNameSelected]}>
-							{exercise.name}
+						style={[styles.startButton, !selectedExercise && styles.startButtonDisabled]}
+						onPress={startSession}
+						disabled={!selectedExercise || createSessionMutation.isPending}>
+						<Text style={styles.startButtonText}>
+							{createSessionMutation.isPending ? 'Starting...' : 'Start Session'}
 						</Text>
-						<Text style={styles.exerciseDescription}>{exercise.description}</Text>
-						{selectedExercise === exercise.id && (
-							<View style={styles.selectedBadge}>
-								<Text style={styles.selectedBadgeText}>✓ Selected</Text>
-							</View>
-						)}
 					</TouchableOpacity>
-				))}
-			</View>
 
-			<View style={styles.footer}>
-				<TouchableOpacity
-					style={[styles.startButton, !selectedExercise && styles.startButtonDisabled]}
-					onPress={startSession}
-					disabled={!selectedExercise || createSessionMutation.isPending}
-				>
-					<Text style={styles.startButtonText}>
-						{createSessionMutation.isPending ? 'Starting...' : 'Start Session'}
-					</Text>
-				</TouchableOpacity>
-
-				<TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-					<Text style={styles.cancelButtonText}>Cancel</Text>
-				</TouchableOpacity>
-			</View>
-		</ScrollView>
+					<TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+						<Text style={styles.cancelButtonText}>Cancel</Text>
+					</TouchableOpacity>
+				</View>
+			</ScrollView>
+		</SafeAreaView>
 	);
 }
 

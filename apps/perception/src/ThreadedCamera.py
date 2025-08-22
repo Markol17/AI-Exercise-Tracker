@@ -5,8 +5,8 @@ import cv2
 
 
 class ThreadedCamera:
-    def __init__(self, src=0):
-        self.capture = cv2.VideoCapture(src)
+    def __init__(self):
+        self.capture = cv2.VideoCapture(0)
         self.capture.set(cv2.CAP_PROP_BUFFERSIZE, 2)
         # FPS = 1/X
         # X = desired FPS
@@ -23,7 +23,7 @@ class ThreadedCamera:
         """Start the camera thread"""
         if not self.thread.is_alive():
             self.thread.start()
-    
+
     def update(self):
         while self.running:
             try:
@@ -39,20 +39,20 @@ class ThreadedCamera:
         if self.frame is not None:
             return True, self.frame
         return False, None
-    
+
     def stop(self):
         """Stop the camera thread"""
         # Signal thread to stop
         self.running = False
-        
+
         # Wait for thread to finish (with timeout)
         if self.thread.is_alive():
             self.thread.join(timeout=2.0)
-        
+
         # Release capture after thread has stopped
         if self.capture and self.capture.isOpened():
             self.capture.release()
             self.capture = None
-        
+
         # Clear frame reference
         self.frame = None

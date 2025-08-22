@@ -1,13 +1,12 @@
-import { useExerciseStats, useMembers } from '@/hooks/api';
 import { router } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
 	// Get members data and real-time exercise stats
-	const { data: membersData } = useMembers();
-	const members = membersData?.items || [];
-	const { currentExercise, isConnected } = useExerciseStats();
+	// const { data: membersData } = useMembers();
+	// const members = membersData?.items || [];
+	// const { currentExercise, isConnected } = useExerciseStats();
 
 	const goToMembers = () => {
 		router.push('/members');
@@ -17,7 +16,7 @@ export default function HomeScreen() {
 		<ScrollView style={styles.container}>
 			<View style={styles.content}>
 				{/* Perception Status */}
-				<View style={[styles.statusCard, isConnected ? styles.connected : styles.disconnected]}>
+				{/* <View style={[styles.statusCard, isConnected ? styles.connected : styles.disconnected]}>
 					<Text style={styles.statusText}>{isConnected ? '🟢 WebSocket Connected' : '🔴 WebSocket Disconnected'}</Text>
 					<Text style={styles.statusSubtext}>
 						{isConnected ? 'Ready for live exercise tracking' : 'Start perception app to connect'}
@@ -25,11 +24,11 @@ export default function HomeScreen() {
 					{currentExercise && (
 						<Text style={styles.currentExercise}>🎯 Current Exercise: {currentExercise.toUpperCase()}</Text>
 					)}
-				</View>
+				</View> */}
 
 				{/* Quick Start */}
 				<View style={styles.card}>
-					<Text style={styles.cardTitle}>🚀 Quick Start</Text>
+					<Text style={styles.cardTitle}>Quick Start</Text>
 					<Text style={styles.cardDescription}>
 						Select a member and start a live workout session with AI pose detection
 					</Text>
@@ -39,8 +38,8 @@ export default function HomeScreen() {
 				</View>
 
 				{/* Members Overview */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>👥 Members ({members.length})</Text>
+				{/* <View style={styles.card}>
+					<Text style={styles.cardTitle}>Members</Text>
 					{members.length > 0 ? (
 						<View>
 							<Text style={styles.cardDescription}>
@@ -58,7 +57,7 @@ export default function HomeScreen() {
 							</TouchableOpacity>
 						</View>
 					)}
-				</View>
+				</View> */}
 			</View>
 		</ScrollView>
 	);

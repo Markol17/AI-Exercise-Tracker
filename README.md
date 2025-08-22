@@ -173,7 +173,6 @@ WS_PORT=3001
 API_BASE_URL=http://localhost:3000/api
 WS_URL=ws://192.168.1.103:3001
 INGESTION_SECRET=poc_secret_key_2024
-CAMERA_INDEX=0
 ```
 
 ### Database Management

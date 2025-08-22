@@ -7,6 +7,11 @@ import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 
 export default function LiveSessionScreen() {
+	// TODO: remove this when env validation is added
+	if (!process.env.EXPO_PUBLIC_WS_URL) {
+		throw new Error('EXPO_PUBLIC_WS_URL is not set');
+	}
+
 	const { sessionId, memberId, memberName, exercise } = useLocalSearchParams<{
 		sessionId: string;
 		memberId: string;
@@ -18,7 +23,6 @@ export default function LiveSessionScreen() {
 	const [sessionDuration, setSessionDuration] = useState<string>('00:00');
 	const endSessionMutation = useEndSession();
 
-	// Real-time exercise stats from perception app
 	const { currentExercise, repCount, plankDuration, shoulderTapCount, isConnected, connectionStatus } =
 		useExerciseStats();
 
@@ -28,9 +32,7 @@ export default function LiveSessionScreen() {
 			sessionId: sessionId || '',
 		});
 
-
-	// Send exercise type to perception app when connected
-	const { sendJsonMessage } = useWebSocket(process.env.EXPO_PUBLIC_WS_URL || '', {
+	const { sendJsonMessage } = useWebSocket(process.env.EXPO_PUBLIC_WS_URL, {
 		share: true,
 		shouldReconnect: () => true,
 	});
@@ -76,23 +78,15 @@ export default function LiveSessionScreen() {
 				style: 'destructive',
 				onPress: async () => {
 					try {
-						// Stop video stream first
 						stopVideoStream();
-
-						// Send session end message
 						sendJsonMessage({
 							type: 'session_end',
 							sessionId,
 						});
-
-						// End session in database
 						if (sessionId) {
 							await endSessionMutation.mutateAsync({ sessionId });
 						}
-
-						Alert.alert('Session Ended', `Session for ${memberName} has been completed.`, [
-							{ text: 'OK', onPress: () => router.replace('/(tabs)') },
-						]);
+						router.replace('/(tabs)');
 					} catch (error) {
 						console.error('Failed to end session:', error);
 						Alert.alert('Error', 'Failed to end session properly');
@@ -104,19 +98,6 @@ export default function LiveSessionScreen() {
 
 	return (
 		<View style={styles.container}>
-			<View style={styles.header}>
-				<View style={styles.sessionInfo}>
-					<Text style={styles.memberName}>{memberName}</Text>
-					<Text style={styles.exerciseType}>📊 {exercise?.toUpperCase()}</Text>
-					<Text style={styles.sessionTime}>Duration: {sessionDuration}</Text>
-				</View>
-
-				<View style={styles.connectionStatus}>
-					<View style={[styles.statusDot, { backgroundColor: isConnected ? '#28a745' : '#dc3545' }]} />
-					<Text style={[styles.statusText, { color: isConnected ? '#28a745' : '#dc3545' }]}>{connectionStatus}</Text>
-				</View>
-			</View>
-
 			<View style={styles.cameraContainer}>
 				{isStreaming && remoteStream ? (
 					<View style={styles.videoContainer}>
@@ -124,8 +105,7 @@ export default function LiveSessionScreen() {
 						{/* Debug Overlay */}
 						<View style={styles.debugOverlay}>
 							<View style={styles.debugHeader}>
-								<Text style={styles.debugTitle}>🎯 {exercise?.toUpperCase()}</Text>
-								<Text style={styles.debugSession}>Session: {sessionId?.slice(0, 8)}...</Text>
+								<Text style={styles.debugTitle}>{exercise}</Text>
 							</View>
 							<View style={styles.debugStats}>
 								{exercise === 'plank' ? (
@@ -160,7 +140,7 @@ export default function LiveSessionScreen() {
 				) : isConnected ? (
 					<View style={styles.cameraFeed}>
 						<View style={styles.cameraPlaceholder}>
-							<Text style={styles.cameraPlaceholderText}>🎥 Connecting to Camera</Text>
+							<Text style={styles.cameraPlaceholderText}>Connecting to Camera</Text>
 							<Text style={styles.cameraPlaceholderSubtext}>WebRTC Status: {connectionState}</Text>
 							<Text style={styles.cameraPlaceholderSubtext}>Exercise: {exercise}</Text>
 							{webSocketState === ReadyState.OPEN && (
@@ -172,41 +152,15 @@ export default function LiveSessionScreen() {
 					</View>
 				) : (
 					<View style={styles.cameraDisconnected}>
-						<Text style={styles.disconnectedText}>📱 Perception App Disconnected</Text>
+						<Text style={styles.disconnectedText}>Perception App Disconnected</Text>
 						<Text style={styles.disconnectedSubtext}>Start the perception app to see live camera feed</Text>
 					</View>
 				)}
 			</View>
 
-			{currentExercise && (
-				<View style={styles.exerciseStats}>
-					<Text style={styles.exerciseTitle}>🏋️ {currentExercise.toUpperCase()}</Text>
-					<View style={styles.statsRow}>
-						{currentExercise === 'plank' ? (
-							<View style={styles.statItem}>
-								<Text style={styles.statValue}>{plankDuration.toFixed(1)}s</Text>
-								<Text style={styles.statLabel}>Duration</Text>
-							</View>
-						) : currentExercise === 'shouldertap' ? (
-							<View style={styles.statItem}>
-								<Text style={styles.statValue}>{shoulderTapCount}</Text>
-								<Text style={styles.statLabel}>Taps</Text>
-							</View>
-						) : (
-							<View style={styles.statItem}>
-								<Text style={styles.statValue}>{repCount}</Text>
-								<Text style={styles.statLabel}>Reps</Text>
-							</View>
-						)}
-					</View>
-				</View>
-			)}
-
-			<View style={styles.controls}>
-				<TouchableOpacity style={styles.endSessionButton} onPress={endSession}>
-					<Text style={styles.endSessionButtonText}>End Session</Text>
-				</TouchableOpacity>
-			</View>
+			<TouchableOpacity style={styles.endSessionButton} onPress={endSession}>
+				<Text style={styles.endSessionButtonText}>End Session</Text>
+			</TouchableOpacity>
 		</View>
 	);
 }
@@ -333,15 +287,13 @@ const styles = StyleSheet.create({
 		textTransform: 'uppercase',
 		letterSpacing: 1,
 	},
-	controls: {
-		padding: 16,
-		backgroundColor: 'rgba(0,0,0,0.8)',
-	},
 	endSessionButton: {
 		backgroundColor: '#dc3545',
 		padding: 16,
 		borderRadius: 8,
 		alignItems: 'center',
+		margin: 16,
+		marginBottom: 24,
 	},
 	endSessionButtonText: {
 		color: 'white',
@@ -360,7 +312,7 @@ const styles = StyleSheet.create({
 	},
 	debugOverlay: {
 		position: 'absolute',
-		top: 10,
+		top: 60,
 		left: 10,
 		right: 10,
 		backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -369,11 +321,10 @@ const styles = StyleSheet.create({
 	},
 	debugHeader: {
 		flexDirection: 'row',
-		justifyContent: 'space-between',
-		marginBottom: 8,
+		justifyContent: 'center',
 	},
 	debugTitle: {
-		color: '#4CAF50',
+		color: '#fff',
 		fontSize: 16,
 		fontWeight: 'bold',
 	},

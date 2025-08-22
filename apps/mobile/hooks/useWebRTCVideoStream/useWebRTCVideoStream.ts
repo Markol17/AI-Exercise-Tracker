@@ -46,7 +46,7 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 
 	// Send WebRTC signaling message - use ref to avoid recreating
 	const sendSignalingRef = useRef<(type: string, data: any) => void>();
-	
+
 	useEffect(() => {
 		sendSignalingRef.current = (type: string, data: any) => {
 			const message = {
@@ -61,7 +61,7 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		};
 	}, [sendJsonMessage]);
 
-	// Stable sendSignaling function that won't cause re-renders  
+	// Stable sendSignaling function that won't cause re-renders
 	const sendSignaling = useCallback((type: string, data: any) => {
 		sendSignalingRef.current?.(type, data);
 	}, []);
@@ -142,7 +142,7 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 
 					// Create new peer connection for this offer
 					const pc = initializePeerConnection();
-					
+
 					try {
 						// Set remote description
 						const offer = new RTCSessionDescription(data);

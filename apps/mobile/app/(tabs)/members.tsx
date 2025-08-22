@@ -1,7 +1,7 @@
 import { useCreateMember, useMembers } from '@/hooks/api';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function MembersScreen() {
 	const [newMemberName, setNewMemberName] = useState('');
@@ -73,7 +73,7 @@ export default function MembersScreen() {
 					// React Query will automatically refetch when we invalidate
 				}}
 			/>
-			<View style={styles.createSection}>
+			{/* <View style={styles.createSection}>
 				<TextInput
 					style={styles.input}
 					placeholder='Enter member name'
@@ -85,7 +85,7 @@ export default function MembersScreen() {
 						{createMemberMutation.isPending ? 'Creating...' : 'Create Member'}
 					</Text>
 				</TouchableOpacity>
-			</View>
+			</View> */}
 		</View>
 	);
 }

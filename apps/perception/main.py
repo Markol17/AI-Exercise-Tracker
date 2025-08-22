@@ -20,9 +20,9 @@ from dotenv import load_dotenv
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
+from exercies import get_exercise_processor
 from ThreadedCamera import ThreadedCamera
 from webrtc_streamer import WebRTCStreamer
-from exercies import get_exercise_processor
 
 # Load environment variables
 load_dotenv()
@@ -146,8 +146,7 @@ class PerceptionApp:
         self.running = True
 
         # Initialize camera
-        camera_index = int(os.getenv("CAMERA_INDEX", 0))
-        self.threaded_camera = ThreadedCamera(src=camera_index)
+        self.threaded_camera = ThreadedCamera()
         self.threaded_camera.start()
         logger.info("📹 Camera started")
 
@@ -248,13 +247,17 @@ class PerceptionApp:
                 if self.exercise_processor:
                     # Get current stats from processor
                     base_stats = self.exercise_processor.get_stats()
-                    
+
                     # Add any additional stats that might be present
                     stats = {
                         "exercise": self.exercise_type,
                         "rep_count": base_stats.get("rep_count", 0),
-                        "plank_duration": getattr(self.exercise_processor, "plank_duration", 0),
-                        "shoulder_tap_count": getattr(self.exercise_processor, "shoulder_tap_count", 0),
+                        "plank_duration": getattr(
+                            self.exercise_processor, "plank_duration", 0
+                        ),
+                        "shoulder_tap_count": getattr(
+                            self.exercise_processor, "shoulder_tap_count", 0
+                        ),
                     }
 
                     # Send stats to mobile app
