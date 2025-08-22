@@ -1,232 +1,172 @@
-import time
+"""
+Lunges exercise detection for WebRTC streaming
+Based on original-perception implementation but without GUI
+"""
 
-import mediapipe as mp
-from src.exercies.Exercise import Exercise
-from src.ThreadedCamera import ThreadedCamera
-from src.utils import *
-from src.websocket_client import ws_client
+import cv2
+import numpy as np
+import logging
+from src.exercies.ExerciseBase import ExerciseBase
+from src.utils import ang
 
-mp_drawing = mp.solutions.drawing_utils
-mp_holistic = mp.solutions.holistic
-mp_pose = mp.solutions.pose
-
-pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
-pose_landmark_drawing_spec = mp_drawing.DrawingSpec(
-    thickness=5, circle_radius=2, color=(0, 0, 255)
-)
-pose_connection_drawing_spec = mp_drawing.DrawingSpec(
-    thickness=1, circle_radius=1, color=(0, 255, 0)
-)
-PRESENCE_THRESHOLD = 0.5
-VISIBILITY_THRESHOLD = 0.5
-performedPushUp = False
+logger = logging.getLogger(__name__)
 
 
-class Lunges(Exercise):
+class Lunges(ExerciseBase):
+    """Lunges exercise detection with visual overlays"""
+    
     def __init__(self):
-        pass
-
-    def exercise(self):
-        threaded_camera = ThreadedCamera()
-        # Create regular window with fixed size
-        cv2.namedWindow("Image", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("Image", 1280, 720)
-        ang1 = 0
-        ang2 = 0
-        count = 0
-        frames = 0
-        performedLunge = False
-        last_sent_count = -1
-
-        # Connect to WebSocket server
-        ws_client.connect()
-        while True:
-
-            success, image = threaded_camera.show_frame()
-            if not success or image is None:
-                continue
-            image = cv2.flip(image, 1)
-            image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
-            results = pose.process(image)
-            image.flags.writeable = True
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            mp_drawing.draw_landmarks(
-                image,
-                results.pose_landmarks,
-                mp_holistic.POSE_CONNECTIONS,
-                landmark_drawing_spec=pose_landmark_drawing_spec,
-                connection_drawing_spec=pose_connection_drawing_spec,
-            )
-            idx_to_coordinates = get_idx_to_coordinates(image, results)
-            try:
-                # back - knee - ankle
-                if (
-                    23 in idx_to_coordinates
-                    and 25 in idx_to_coordinates
-                    and 27 in idx_to_coordinates
-                ):  # left side of body
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[23]),
-                        (idx_to_coordinates[25]),
-                        thickness=6,
-                        color=(255, 0, 0),
-                    )
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[25]),
-                        (idx_to_coordinates[27]),
-                        thickness=6,
-                        color=(255, 0, 0),
-                    )
-                    ang1 = ang(
-                        (idx_to_coordinates[23], idx_to_coordinates[25]),
-                        (idx_to_coordinates[25], idx_to_coordinates[27]),
-                    )
-                    cv2.putText(
-                        image,
-                        str(round(ang1, 2)),
-                        (
-                            idx_to_coordinates[25][0] - 40,
-                            idx_to_coordinates[25][1] - 50,
-                        ),
-                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=0.8,
-                        color=(0, 255, 0),
-                        thickness=3,
-                    )
-                    cv2.circle(
-                        image, (idx_to_coordinates[23]), 10, (0, 0, 255), cv2.FILLED
-                    )
-                    cv2.circle(image, (idx_to_coordinates[23]), 15, (0, 0, 255), 2)
-                    cv2.circle(
-                        image, (idx_to_coordinates[25]), 10, (0, 0, 255), cv2.FILLED
-                    )
-                    cv2.circle(image, (idx_to_coordinates[25]), 15, (0, 0, 255), 2)
-                    cv2.circle(
-                        image, (idx_to_coordinates[27]), 10, (0, 0, 255), cv2.FILLED
-                    )
-                    cv2.circle(image, (idx_to_coordinates[27]), 15, (0, 0, 255), 2)
-                if (
-                    24 in idx_to_coordinates
-                    and 26 in idx_to_coordinates
-                    and 28 in idx_to_coordinates
-                ):  # right side of body
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[24]),
-                        (idx_to_coordinates[26]),
-                        thickness=6,
-                        color=(255, 0, 0),
-                    )
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[26]),
-                        (idx_to_coordinates[28]),
-                        thickness=6,
-                        color=(255, 0, 0),
-                    )
-                    ang2 = ang(
-                        (idx_to_coordinates[24], idx_to_coordinates[26]),
-                        (idx_to_coordinates[26], idx_to_coordinates[28]),
-                    )
-                    cv2.putText(
-                        image,
-                        str(round(ang2, 2)),
-                        (
-                            idx_to_coordinates[26][0] - 40,
-                            idx_to_coordinates[26][1] - 50,
-                        ),
-                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=0.8,
-                        color=(0, 255, 0),
-                        thickness=3,
-                    )
-                    cv2.circle(
-                        image, (idx_to_coordinates[24]), 10, (0, 0, 255), cv2.FILLED
-                    )
-                    cv2.circle(image, (idx_to_coordinates[24]), 15, (0, 0, 255), 2)
-                    cv2.circle(
-                        image, (idx_to_coordinates[26]), 10, (0, 0, 255), cv2.FILLED
-                    )
-                    cv2.circle(image, (idx_to_coordinates[26]), 15, (0, 0, 255), 2)
-                    cv2.circle(
-                        image, (idx_to_coordinates[28]), 10, (0, 0, 255), cv2.FILLED
-                    )
-                    cv2.circle(image, (idx_to_coordinates[28]), 15, (0, 0, 255), 2)
-            except:
-                pass
-
-            try:
-                frames += 1
-                # cv2.putText(image, str(frames), (1200, 255), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                #             fontScale=1.1, color=(0, 255, 0), thickness=4)
-                if frames > 80:
-                    if ang1 < 100:
-                        performedLunge = True
-                    if ang1 > 150 and performedLunge:
-                        count += 1
-                        performedLunge = False
-
-                        # Send real-time rep count to mobile app
-                        if count != last_sent_count:
-                            ws_client.send_rep_count("lunges", count)
-                            last_sent_count = count
-                            print(f"📱 Sent lunges count: {count}")
-
-                ang1 = 180 - ang1
-                c1 = (255, 0, 0)
-                if ang1 > 70:
-                    c1 = (0, 255, 0)
-                else:
-                    c1 = (255, 0, 0)
-                barLeft = np.interp(ang1, (10, 70), (850, 300))
-                perLeft = np.interp(ang1, (10, 70), (0, 100))
-                cv2.rectangle(image, (550, 300), (610, 850), c1)
-                cv2.rectangle(image, (550, int(barLeft)), (610, 850), c1, cv2.FILLED)
-                cv2.putText(
-                    image,
-                    f"{int(perLeft)} %",
-                    (550, 255),
-                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=1.1,
-                    color=c1,
-                    thickness=4,
-                )
-
-                ang2 = 180 - ang2
-                c2 = (255, 0, 0)
-                if ang2 > 40:
-                    c2 = (0, 255, 0)
-                else:
-                    c2 = (255, 0, 0)
-                barRight = np.interp(ang2, (10, 40), (850, 300))
-                perRight = np.interp(ang2, (10, 40), (0, 100))
-                cv2.rectangle(image, (1400, 300), (1460, 850), c2)
-                cv2.rectangle(image, (1400, int(barRight)), (1460, 850), c2, cv2.FILLED)
-                cv2.putText(
-                    image,
-                    f"{int(perRight)} %",
-                    (1400, 255),
-                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=1.1,
-                    color=c2,
-                    thickness=4,
-                )
-
-            except:
-                pass
-            if 0 in idx_to_coordinates:
-                cv2.putText(
-                    image,
-                    "Lunges : " + str(round(count)),
-                    (idx_to_coordinates[0][0] - 40, idx_to_coordinates[0][1] + 290),
-                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=1.2,
-                    color=(0, 255, 0),
-                    thickness=5,
-                )
-            cv2.imshow("Image", rescale_frame(image, percent=150))
-            if cv2.waitKey(5) & 0xFF == 27:
-                break
-        pose.close()
+        super().__init__()
+        self.performed_lunge = False
+        self.exercise_name = "lunges"
+        self.frames = 0
+        self.left_angle = 0
+        self.right_angle = 0
+    
+    def draw_overlays(self, image, results):
+        """Draw lunges-specific visual overlays"""
+        idx = self.idx_to_coordinates
+        
+        try:
+            # Draw hip - knee - ankle angle for left leg
+            if 23 in idx and 25 in idx and 27 in idx:
+                cv2.line(image, idx[23], idx[25], thickness=6, color=(255, 0, 0))
+                cv2.line(image, idx[25], idx[27], thickness=6, color=(255, 0, 0))
+                
+                self.left_angle = ang((idx[23], idx[25]), (idx[25], idx[27]))
+                
+                cv2.putText(image, str(round(self.left_angle, 2)),
+                           (idx[25][0] - 40, idx[25][1] - 50),
+                           fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                           fontScale=0.8, color=(0, 255, 0), thickness=3)
+                
+                # Draw joint circles
+                cv2.circle(image, idx[23], 10, (0, 0, 255), cv2.FILLED)
+                cv2.circle(image, idx[23], 15, (0, 0, 255), 2)
+                cv2.circle(image, idx[25], 10, (0, 0, 255), cv2.FILLED)
+                cv2.circle(image, idx[25], 15, (0, 0, 255), 2)
+                cv2.circle(image, idx[27], 10, (0, 0, 255), cv2.FILLED)
+                cv2.circle(image, idx[27], 15, (0, 0, 255), 2)
+                
+                # Draw progress bar for left leg
+                ang_display = 180 - self.left_angle
+                c1 = (0, 255, 0) if ang_display > 70 else (255, 0, 0)
+                bar_y = np.interp(ang_display, (10, 70), (450, 200))
+                per = np.interp(ang_display, (10, 70), (0, 100))
+                
+                # Background bar
+                cv2.rectangle(image, (50, 200), (110, 450), c1, 2)
+                # Progress bar
+                cv2.rectangle(image, (50, int(bar_y)), (110, 450), c1, cv2.FILLED)
+                # Percentage text
+                cv2.putText(image, f'L: {int(per)}%', (50, 180), 
+                           fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                           fontScale=0.7, color=c1, thickness=2)
+            
+            # Draw hip - knee - ankle angle for right leg
+            if 24 in idx and 26 in idx and 28 in idx:
+                cv2.line(image, idx[24], idx[26], thickness=6, color=(0, 0, 255))
+                cv2.line(image, idx[26], idx[28], thickness=6, color=(0, 0, 255))
+                
+                self.right_angle = ang((idx[24], idx[26]), (idx[26], idx[28]))
+                
+                cv2.putText(image, str(round(self.right_angle, 2)),
+                           (idx[26][0] - 40, idx[26][1] - 50),
+                           fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                           fontScale=0.8, color=(0, 255, 0), thickness=3)
+                
+                # Draw joint circles
+                cv2.circle(image, idx[24], 10, (0, 0, 255), cv2.FILLED)
+                cv2.circle(image, idx[24], 15, (0, 0, 255), 2)
+                cv2.circle(image, idx[26], 10, (0, 0, 255), cv2.FILLED)
+                cv2.circle(image, idx[26], 15, (0, 0, 255), 2)
+                cv2.circle(image, idx[28], 10, (0, 0, 255), cv2.FILLED)
+                cv2.circle(image, idx[28], 15, (0, 0, 255), 2)
+                
+                # Draw progress bar for right leg
+                ang_display = 180 - self.right_angle
+                c2 = (0, 255, 0) if ang_display > 40 else (255, 0, 0)
+                bar_y = np.interp(ang_display, (10, 40), (450, 200))
+                per = np.interp(ang_display, (10, 40), (0, 100))
+                
+                # Background bar
+                cv2.rectangle(image, (150, 200), (210, 450), c2, 2)
+                # Progress bar
+                cv2.rectangle(image, (150, int(bar_y)), (210, 450), c2, cv2.FILLED)
+                # Percentage text
+                cv2.putText(image, f'R: {int(per)}%', (150, 180), 
+                           fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                           fontScale=0.7, color=c2, thickness=2)
+            
+            # Draw lunge depth indicator
+            if self.left_angle < 100 or self.right_angle < 100:
+                side = "LEFT" if self.left_angle < 100 else "RIGHT"
+                angle = self.left_angle if self.left_angle < 100 else self.right_angle
+                depth_per = np.interp(angle, (70, 110), (100, 0))
+                
+                cv2.putText(image, f"{side} LUNGE", 
+                           (250, 250), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                cv2.putText(image, f"Depth: {int(depth_per)}%", 
+                           (250, 280), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+        except:
+            pass
+    
+    def track_exercise(self, landmarks):
+        """Track lunge reps based on knee angles"""
+        self.frames += 1
+        
+        # Wait for initial frames to stabilize
+        if self.frames > 80:
+            # Check for lunge position (either leg)
+            if self.left_angle < 100 or self.right_angle < 100:
+                self.performed_lunge = True
+            
+            # Check for return to standing position
+            if (self.left_angle > 150 and self.right_angle > 150) and self.performed_lunge:
+                self.rep_count += 1
+                self.performed_lunge = False
+                logger.info(f"Lunge rep completed: {self.rep_count}")
+    
+    def add_info_overlay(self, image):
+        """Add lunges-specific info overlay"""
+        h, w = image.shape[:2]
+        
+        # Add semi-transparent background
+        overlay = image.copy()
+        cv2.rectangle(overlay, (10, 10), (350, 120), (0, 0, 0), -1)
+        cv2.rectangle(overlay, (10, 10), (350, 120), (0, 255, 0), 2)
+        cv2.addWeighted(overlay, 0.4, image, 0.6, 0, image)
+        
+        # Exercise name
+        cv2.putText(image, "LUNGES", 
+                   (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+        
+        # Rep counter
+        cv2.putText(image, f"Reps: ", 
+                   (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"{self.rep_count}", 
+                   (100, 70), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 255), 3)
+        
+        # Set indicator
+        sets = self.rep_count // 10 + 1 if self.rep_count > 0 else 1
+        cv2.putText(image, f"Set: {sets}", 
+                   (200, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+        
+        # Connection status
+        cv2.circle(image, (25, 105), 5, (0, 255, 0), -1)
+        cv2.putText(image, "WebRTC Live", 
+                   (40, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        
+        # Show current lunge state
+        if self.performed_lunge and 0 in self.idx_to_coordinates:
+            cv2.putText(image, "LUNGE", 
+                       (self.idx_to_coordinates[0][0] - 40, self.idx_to_coordinates[0][1] - 100),
+                       cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3)
+    
+    def reset(self):
+        """Reset lunges tracking stats"""
+        super().reset()
+        self.performed_lunge = False
+        self.frames = 0
+        self.left_angle = 0
+        self.right_angle = 0

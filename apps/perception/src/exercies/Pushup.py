@@ -1,382 +1,208 @@
-import asyncio
+"""
+Pushup exercise detection for WebRTC streaming
+Based on original-perception implementation but without GUI
+"""
 
-import mediapipe as mp
-from src.exercies.Exercise import Exercise
-from src.ThreadedCamera import ThreadedCamera
-from src.utils import *
-from src.webrtc_streamer import cleanup_webrtc_streaming, init_webrtc_streaming
-from src.websocket_client import ws_client
+import cv2
+import numpy as np
+import logging
+from src.exercies.ExerciseBase import ExerciseBase
+from src.utils import ang, convert_arc, draw_ellipse
 
-mp_drawing = mp.solutions.drawing_utils
-mp_holistic = mp.solutions.holistic
-mp_pose = mp.solutions.pose
-
-pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
-pose_landmark_drawing_spec = mp_drawing.DrawingSpec(
-    thickness=5, circle_radius=2, color=(0, 0, 255)
-)
-pose_connection_drawing_spec = mp_drawing.DrawingSpec(
-    thickness=1, circle_radius=1, color=(0, 255, 0)
-)
-PRESENCE_THRESHOLD = 0.5
-VISIBILITY_THRESHOLD = 0.5
-performedPushUp = False
+logger = logging.getLogger(__name__)
 
 
-class Pushup(Exercise):
+class Pushup(ExerciseBase):
+    """Pushup exercise detection with visual overlays"""
+    
     def __init__(self):
         super().__init__()
-
-    def exercise(self):
-        """Synchronous exercise method for backwards compatibility"""
-        # Run async version in sync context
-        asyncio.run(self.exercise_async())
-
-    async def exercise_async(self):
-        threaded_camera = ThreadedCamera()
-        # Create regular window with fixed size
-        cv2.namedWindow("Image", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("Image", 1280, 720)
-        scount = 0
-        last_sent_count = -1
-
-        # Connect to WebSocket server
-        ws_client.connect()
-
-        # Initialize WebRTC streaming if enabled
-        webrtc_streamer = None
-        if self.enable_webrtc and self.session_id:
-            print(f"🎥 Starting WebRTC streaming for session {self.session_id}")
-            webrtc_streamer = await init_webrtc_streaming(
-                self.session_id, threaded_camera
-            )
-            if webrtc_streamer:
-                print("✅ WebRTC streaming initialized successfully")
+        self.performed_pushup = False
+        self.exercise_name = "pushup"
+    
+    def draw_overlays(self, image, results):
+        """Draw pushup-specific visual overlays"""
+        idx = self.idx_to_coordinates
+        
+        try:
+            # Draw shoulder - ankle - wrist angle (body alignment)
+            if 12 in idx and 28 in idx and 16 in idx:  # Right side
+                cv2.line(image, idx[12], idx[28], thickness=4, color=(255, 0, 255))
+                cv2.line(image, idx[28], idx[16], thickness=4, color=(255, 0, 255))
+                
+                l1 = np.linspace(idx[12], idx[28], 100)
+                l2 = np.linspace(idx[28], idx[16], 100)
+                eang1 = ang((idx[12], idx[28]), (idx[28], idx[16]))
+                
+                cv2.putText(image, str(round(eang1, 2)), idx[28],
+                           fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                           fontScale=0.6, color=(0, 255, 0), thickness=2)
+                
+                center, radius, start_angle, end_angle = convert_arc(l1[80], l2[20], sagitta=15)
+                axes = (radius, radius)
+                draw_ellipse(image, center, axes, -1, start_angle, end_angle, 255)
+                
+            elif 11 in idx and 27 in idx and 15 in idx:  # Left side
+                cv2.line(image, idx[11], idx[27], thickness=4, color=(255, 0, 255))
+                cv2.line(image, idx[27], idx[15], thickness=4, color=(255, 0, 255))
+                
+                l1 = np.linspace(idx[11], idx[27], 100)
+                l2 = np.linspace(idx[27], idx[15], 100)
+                eang1 = ang((idx[11], idx[27]), (idx[27], idx[15]))
+                
+                cv2.putText(image, str(round(eang1, 2)), idx[27],
+                           fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                           fontScale=0.6, color=(0, 255, 0), thickness=2)
+                
+                center, radius, start_angle, end_angle = convert_arc(l1[80], l2[20], sagitta=15)
+                axes = (radius, radius)
+                draw_ellipse(image, center, axes, -1, start_angle, end_angle, 255)
+        except:
+            pass
+        
+        try:
+            # Draw shoulder - elbow - wrist angle (arm angle)
+            if 12 in idx and 14 in idx and 16 in idx:  # Right arm
+                cv2.line(image, idx[12], idx[14], thickness=4, color=(255, 0, 255))
+                cv2.line(image, idx[14], idx[16], thickness=4, color=(255, 0, 255))
+                
+                l1 = np.linspace(idx[12], idx[14], 100)
+                l2 = np.linspace(idx[14], idx[16], 100)
+                ang1 = ang((idx[12], idx[14]), (idx[14], idx[16]))
+                
+                cv2.putText(image, "   " + str(round(ang1, 2)), idx[14],
+                           fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                           fontScale=0.6, color=(0, 255, 0), thickness=2)
+                
+                center, radius, start_angle, end_angle = convert_arc(l1[80], l2[20], sagitta=15)
+                axes = (radius, radius)
+                draw_ellipse(image, center, axes, -1, start_angle, end_angle, 255)
+                
+                # Color indicator for arm angle
+                if ang1 < 90:
+                    cv2.circle(image, idx[14], 10, (0, 255, 0), -1)  # Green = down position
+                elif ang1 > 160:
+                    cv2.circle(image, idx[14], 10, (0, 165, 255), -1)  # Orange = up position
+                    
+            elif 11 in idx and 13 in idx and 15 in idx:  # Left arm
+                cv2.line(image, idx[11], idx[13], thickness=4, color=(255, 0, 255))
+                cv2.line(image, idx[13], idx[15], thickness=4, color=(255, 0, 255))
+                
+                l1 = np.linspace(idx[11], idx[13], 100)
+                l2 = np.linspace(idx[13], idx[15], 100)
+                ang1 = ang((idx[11], idx[13]), (idx[13], idx[15]))
+                
+                cv2.putText(image, str(round(ang1, 2)), idx[13],
+                           fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                           fontScale=0.6, color=(0, 255, 0), thickness=2)
+                
+                center, radius, start_angle, end_angle = convert_arc(l1[80], l2[20], sagitta=15)
+                axes = (radius, radius)
+                draw_ellipse(image, center, axes, -1, start_angle, end_angle, 255)
+                
+                # Color indicator for arm angle
+                if ang1 < 90:
+                    cv2.circle(image, idx[13], 10, (0, 255, 0), -1)  # Green = down position
+                elif ang1 > 160:
+                    cv2.circle(image, idx[13], 10, (0, 165, 255), -1)  # Orange = up position
+        except:
+            pass
+        
+        try:
+            # Draw elbow - wrist - horizontal ground angle (wrist alignment)
+            if 14 in idx and 16 in idx:  # Right side
+                cv2.line(image, idx[14], idx[16], thickness=4, color=(255, 0, 255))
+                temp = (idx[16][0] + 80, idx[16][1])
+                cv2.line(image, idx[16], temp, thickness=4, color=(255, 0, 255))
+                
+                l1 = np.linspace(idx[14], idx[16], 100)
+                l2 = np.linspace(idx[16], temp, 100)
+                ang1 = ang((idx[14], idx[16]), (idx[16], temp))
+                
+                cv2.putText(image, "   " + str(round(ang1, 2)), idx[16],
+                           fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                           fontScale=0.6, color=(0, 255, 0), thickness=2)
+                
+                center, radius, start_angle, end_angle = convert_arc(l1[80], l2[20], sagitta=15)
+                axes = (radius, radius)
+                draw_ellipse(image, center, axes, -1, start_angle, end_angle, 255)
+                
+            elif 13 in idx and 15 in idx:  # Left side
+                cv2.line(image, idx[13], idx[15], thickness=4, color=(255, 0, 255))
+                temp = (idx[15][0] + 80, idx[15][1])
+                cv2.line(image, idx[15], temp, thickness=4, color=(255, 0, 255))
+                
+                l1 = np.linspace(idx[13], idx[15], 100)
+                l2 = np.linspace(idx[15], temp, 100)
+                ang1 = ang((idx[13], idx[15]), (idx[15], temp))
+                
+                cv2.putText(image, "   " + str(round(ang1, 2)), idx[15],
+                           fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                           fontScale=0.6, color=(0, 255, 0), thickness=2)
+                
+                center, radius, start_angle, end_angle = convert_arc(l1[80], l2[20], sagitta=15)
+                axes = (radius, radius)
+                draw_ellipse(image, center, axes, -1, start_angle, end_angle, 255)
+        except:
+            pass
+        
+        # Draw depth indicator
+        try:
+            if (11 in idx or 12 in idx) and (15 in idx or 16 in idx):
+                shoulder_idx = 12 if 12 in idx else 11
+                wrist_idx = 16 if 16 in idx else 15
+                
+                # Vertical distance indicator
+                depth = abs(idx[shoulder_idx][1] - idx[wrist_idx][1])
+                depth_text = "DOWN" if depth < 300 else "UP"
+                color = (0, 255, 0) if depth < 300 else (0, 165, 255)
+                
+                cv2.putText(image, f"Position: {depth_text}", 
+                           (20, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        except:
+            pass
+    
+    def track_exercise(self, landmarks):
+        """Track pushup reps based on shoulder-wrist vertical distance"""
+        idx = self.idx_to_coordinates
+        
+        try:
+            # Get shoulder and wrist coordinates
+            if 12 in idx:
+                shoulder_coord = idx[12]
+            elif 11 in idx:
+                shoulder_coord = idx[11]
             else:
-                print("❌ Failed to initialize WebRTC streaming")
-        while True:
-            success, image = threaded_camera.show_frame()
-            if not success or image is None:
-                continue
-            image = cv2.flip(image, 1)
-            image_orig = cv2.flip(image, 1)
-            image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
-            results = pose.process(image)
-            image.flags.writeable = True
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            mp_drawing.draw_landmarks(
-                image,
-                results.pose_landmarks,
-                mp_holistic.POSE_CONNECTIONS,
-                landmark_drawing_spec=pose_landmark_drawing_spec,
-                connection_drawing_spec=pose_connection_drawing_spec,
-            )
-            idx_to_coordinates = get_idx_to_coordinates(image, results)
-            try:
-                # shoulder - ankle - wrist
-                if (
-                    12 in idx_to_coordinates
-                    and 28 in idx_to_coordinates
-                    and 16 in idx_to_coordinates
-                ):  # left side of body
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[12]),
-                        (idx_to_coordinates[28]),
-                        thickness=4,
-                        color=(255, 0, 255),
-                    )
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[28]),
-                        (idx_to_coordinates[16]),
-                        thickness=4,
-                        color=(255, 0, 255),
-                    )
-                    l1 = np.linspace(
-                        idx_to_coordinates[12], idx_to_coordinates[28], 100
-                    )
-                    l2 = np.linspace(
-                        idx_to_coordinates[28], idx_to_coordinates[16], 100
-                    )
-                    eang1 = ang(
-                        (idx_to_coordinates[12], idx_to_coordinates[28]),
-                        (idx_to_coordinates[28], idx_to_coordinates[16]),
-                    )
-                    cv2.putText(
-                        image,
-                        str(round(eang1, 2)),
-                        (idx_to_coordinates[28]),
-                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=0.6,
-                        color=(0, 255, 0),
-                        thickness=2,
-                    )
-                    center, radius, start_angle, end_angle = convert_arc(
-                        l1[80], l2[20], sagitta=15
-                    )
-                    axes = (radius, radius)
-                    draw_ellipse(image, center, axes, -1, start_angle, end_angle, 255)
-
-                else:  # right side of body
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[11]),
-                        (idx_to_coordinates[27]),
-                        thickness=4,
-                        color=(255, 0, 255),
-                    )
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[27]),
-                        (idx_to_coordinates[15]),
-                        thickness=4,
-                        color=(255, 0, 255),
-                    )
-                    l1 = np.linspace(
-                        idx_to_coordinates[11], idx_to_coordinates[27], 100
-                    )
-                    l2 = np.linspace(
-                        idx_to_coordinates[27], idx_to_coordinates[16], 100
-                    )
-                    eang1 = ang(
-                        (idx_to_coordinates[11], idx_to_coordinates[27]),
-                        (idx_to_coordinates[27], idx_to_coordinates[15]),
-                    )
-                    cv2.putText(
-                        image,
-                        str(round(eang1, 2)),
-                        (idx_to_coordinates[27]),
-                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=0.6,
-                        color=(0, 255, 0),
-                        thickness=2,
-                    )
-                    center, radius, start_angle, end_angle = convert_arc(
-                        l1[80], l2[20], sagitta=15
-                    )
-                    axes = (radius, radius)
-                    draw_ellipse(image, center, axes, -1, start_angle, end_angle, 255)
-            except:
-                pass
-
-            try:
-                # shoulder - Elbow - wrist
-                if (
-                    12 in idx_to_coordinates
-                    and 14 in idx_to_coordinates
-                    and 16 in idx_to_coordinates
-                ):  # left side of body
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[12]),
-                        (idx_to_coordinates[14]),
-                        thickness=4,
-                        color=(255, 0, 255),
-                    )
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[14]),
-                        (idx_to_coordinates[16]),
-                        thickness=4,
-                        color=(255, 0, 255),
-                    )
-                    l1 = np.linspace(
-                        idx_to_coordinates[12], idx_to_coordinates[14], 100
-                    )
-                    l2 = np.linspace(
-                        idx_to_coordinates[14], idx_to_coordinates[16], 100
-                    )
-                    ang1 = ang(
-                        (idx_to_coordinates[12], idx_to_coordinates[14]),
-                        (idx_to_coordinates[14], idx_to_coordinates[16]),
-                    )
-                    cv2.putText(
-                        image,
-                        "   " + str(round(ang1, 2)),
-                        (idx_to_coordinates[14]),
-                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=0.6,
-                        color=(0, 255, 0),
-                        thickness=2,
-                    )
-                    center, radius, start_angle, end_angle = convert_arc(
-                        l1[80], l2[20], sagitta=15
-                    )
-                    axes = (radius, radius)
-                    draw_ellipse(image, center, axes, -1, start_angle, end_angle, 255)
-
-                else:  # right side of body
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[11]),
-                        (idx_to_coordinates[13]),
-                        thickness=4,
-                        color=(255, 0, 255),
-                    )
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[13]),
-                        (idx_to_coordinates[15]),
-                        thickness=4,
-                        color=(255, 0, 255),
-                    )
-                    l1 = np.linspace(
-                        idx_to_coordinates[11], idx_to_coordinates[13], 100
-                    )
-                    l2 = np.linspace(
-                        idx_to_coordinates[13], idx_to_coordinates[16], 100
-                    )
-                    eang1 = ang(
-                        (idx_to_coordinates[11], idx_to_coordinates[13]),
-                        (idx_to_coordinates[13], idx_to_coordinates[15]),
-                    )
-                    cv2.putText(
-                        image,
-                        str(round(eang1, 2)),
-                        (idx_to_coordinates[13]),
-                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=0.6,
-                        color=(0, 255, 0),
-                        thickness=2,
-                    )
-                    center, radius, start_angle, end_angle = convert_arc(
-                        l1[80], l2[20], sagitta=15
-                    )
-                    axes = (radius, radius)
-                    draw_ellipse(image, center, axes, -1, start_angle, end_angle, 255)
-
-            except:
-                pass
-
-            try:
-                # elbow - wrist - horizontal ground
-                if (
-                    14 in idx_to_coordinates and 16 in idx_to_coordinates
-                ):  # left side of body
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[14]),
-                        (idx_to_coordinates[16]),
-                        thickness=4,
-                        color=(255, 0, 255),
-                    )
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[16]),
-                        (idx_to_coordinates[16][0] + 80, idx_to_coordinates[16][1]),
-                        thickness=4,
-                        color=(255, 0, 255),
-                    )
-                    l1 = np.linspace(
-                        idx_to_coordinates[14], idx_to_coordinates[16], 100
-                    )
-                    temp = (idx_to_coordinates[16][0] + 80, idx_to_coordinates[16][1])
-                    l2 = np.linspace(idx_to_coordinates[16], temp, 100)
-                    ang1 = ang(
-                        (idx_to_coordinates[14], idx_to_coordinates[16]),
-                        (idx_to_coordinates[16], temp),
-                    )
-                    cv2.putText(
-                        image,
-                        "   " + str(round(ang1, 2)),
-                        (idx_to_coordinates[16]),
-                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=0.6,
-                        color=(0, 255, 0),
-                        thickness=2,
-                    )
-                    center, radius, start_angle, end_angle = convert_arc(
-                        l1[80], l2[20], sagitta=15
-                    )
-                    axes = (radius, radius)
-                    draw_ellipse(image, center, axes, -1, start_angle, end_angle, 255)
-                else:  # right side of body
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[13]),
-                        (idx_to_coordinates[15]),
-                        thickness=4,
-                        color=(255, 0, 255),
-                    )
-                    cv2.line(
-                        image,
-                        (idx_to_coordinates[15]),
-                        (idx_to_coordinates[15][0] + 80, idx_to_coordinates[15][1]),
-                        thickness=4,
-                        color=(255, 0, 255),
-                    )
-                    l1 = np.linspace(
-                        idx_to_coordinates[14], idx_to_coordinates[15], 100
-                    )
-                    temp = (idx_to_coordinates[15][0] + 80, idx_to_coordinates[15][1])
-                    l2 = np.linspace(idx_to_coordinates[15], temp, 100)
-                    ang1 = ang(
-                        (idx_to_coordinates[14], idx_to_coordinates[15]),
-                        (idx_to_coordinates[15], temp),
-                    )
-                    cv2.putText(
-                        image,
-                        "   " + str(round(ang1, 2)),
-                        (idx_to_coordinates[15]),
-                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=0.6,
-                        color=(0, 255, 0),
-                        thickness=2,
-                    )
-                    center, radius, start_angle, end_angle = convert_arc(
-                        l1[80], l2[20], sagitta=15
-                    )
-                    axes = (radius, radius)
-                    draw_ellipse(image, center, axes, -1, start_angle, end_angle, 255)
-
-            except:
-                pass
-
-            try:
-                # Count Number of Pushups
-                if 12 in idx_to_coordinates:
-                    shoulder_coord = idx_to_coordinates[12]
-                else:
-                    shoulder_coord = idx_to_coordinates[11]
-
-                if 16 in idx_to_coordinates:
-                    ankle_coord = idx_to_coordinates[16]
-                else:
-                    ankle_coord = idx_to_coordinates[15]
-
-                if abs(shoulder_coord[1] - ankle_coord[1]) < 300:
-                    performedPushUp = True
-                if abs(shoulder_coord[1] - ankle_coord[1]) > 300 and performedPushUp:
-                    scount += 1
-                    performedPushUp = False
-
-                    # Send real-time rep count to mobile app
-                    if scount != last_sent_count:
-                        ws_client.send_rep_count("pushup", scount)
-                        last_sent_count = scount
-                        print(f"📱 Sent pushup count: {scount}")
-
-            except:
-                pass
-            if 0 in idx_to_coordinates:
-                cv2.putText(
-                    image,
-                    "Count : " + str(scount),
-                    (idx_to_coordinates[0][0] - 60, idx_to_coordinates[0][1] - 140),
-                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=0.9,
-                    color=(0, 0, 0),
-                    thickness=2,
-                )
-            cv2.imshow("Image", rescale_frame(image, percent=100))
-            if cv2.waitKey(5) & 0xFF == 27:
-                break
-
-        # Cleanup
-        pose.close()
-
-        # Clean up WebRTC streaming
-        if webrtc_streamer:
-            print("🛑 Cleaning up WebRTC streaming")
-            await cleanup_webrtc_streaming()
+                return
+            
+            if 16 in idx:
+                wrist_coord = idx[16]
+            elif 15 in idx:
+                wrist_coord = idx[15]
+            else:
+                return
+            
+            # Check pushup position based on vertical distance
+            if abs(shoulder_coord[1] - wrist_coord[1]) < 300:
+                self.performed_pushup = True
+            elif abs(shoulder_coord[1] - wrist_coord[1]) > 300 and self.performed_pushup:
+                self.rep_count += 1
+                self.performed_pushup = False
+                logger.info(f"Pushup rep completed: {self.rep_count}")
+        except:
+            pass
+    
+    def add_info_overlay(self, image):
+        """Add pushup-specific info overlay"""
+        super().add_info_overlay(image)
+        
+        # Add pushup form indicator
+        if self.performed_pushup and 0 in self.idx_to_coordinates:
+            cv2.putText(image, "DOWN", 
+                       (self.idx_to_coordinates[0][0] - 30, self.idx_to_coordinates[0][1] - 100),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+    
+    def reset(self):
+        """Reset pushup tracking stats"""
+        super().reset()
+        self.performed_pushup = False
