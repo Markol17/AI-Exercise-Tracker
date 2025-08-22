@@ -45,7 +45,7 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 	});
 
 	// Send WebRTC signaling message - use ref to avoid recreating
-	const sendSignalingRef = useRef<(type: string, data: any) => void>();
+	const sendSignalingRef = useRef<(type: string, data: any) => void>(null);
 
 	useEffect(() => {
 		sendSignalingRef.current = (type: string, data: any) => {
@@ -165,6 +165,7 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 						console.error('Error handling offer:', err);
 						// Clean up on error
 						if (pcRef.current) {
+							// @ts-expect-error https://github.com/react-native-webrtc/react-native-webrtc/issues/1700#issue-3038071935
 							pcRef.current.close();
 							pcRef.current = null;
 						}

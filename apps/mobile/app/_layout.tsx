@@ -26,6 +26,14 @@ export default function RootLayout() {
 				<Stack screenOptions={{ headerShown: false }}>
 					<Stack.Screen name='(tabs)' />
 					<Stack.Screen name='+not-found' />
+					<Stack.Screen
+						name='exercise-selection'
+						options={{
+							headerShown: true,
+							title: 'Select Exercise',
+							headerBackTitle: 'Back',
+						}}
+					/>
 				</Stack>
 				<StatusBar style='auto' />
 			</ThemeProvider>

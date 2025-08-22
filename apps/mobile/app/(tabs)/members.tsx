@@ -1,10 +1,11 @@
 import { useCreateMember, useMembers } from '@/hooks/api';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function MembersScreen() {
 	const [newMemberName, setNewMemberName] = useState('');
+	const [selectedMember, setSelectedMember] = useState<any>(null);
 
 	// Use React Query hooks
 	const { data: membersData, isLoading, error } = useMembers();
@@ -31,37 +32,47 @@ export default function MembersScreen() {
 		}
 	};
 
-	const startSession = (member: any) => {
+	const startSession = () => {
+		if (!selectedMember) {
+			Alert.alert('Error', 'Please select a member first');
+			return;
+		}
+
 		// Navigate to exercise selection screen first
 		router.push({
 			pathname: '/exercise-selection',
 			params: {
-				memberId: member.id,
-				memberName: member.name,
+				memberId: selectedMember.id,
+				memberName: selectedMember.name,
 			},
 		});
 	};
 
 	return (
-		<View style={styles.container}>
+		<SafeAreaView style={styles.container}>
 			<FlatList
 				data={members}
 				keyExtractor={(item) => item.id}
 				renderItem={({ item }) => (
-					<View style={styles.memberCard}>
+					<TouchableOpacity
+						style={[styles.memberCard, selectedMember?.id === item.id && styles.selectedMemberCard]}
+						onPress={() => setSelectedMember(item)}>
 						<View style={styles.memberInfo}>
-							<Text style={styles.memberName}>{item.name}</Text>
-							{item.email && <Text style={styles.memberEmail}>{item.email}</Text>}
+							<Text style={[styles.memberName, selectedMember?.id === item.id && styles.selectedMemberName]}>
+								{item.name}
+							</Text>
+							{item.email && (
+								<Text style={[styles.memberEmail, selectedMember?.id === item.id && styles.selectedMemberEmail]}>
+									{item.email}
+								</Text>
+							)}
 						</View>
-						<View style={styles.buttonContainer}>
-							{/* <TouchableOpacity style={styles.enrollButton} onPress={() => enrollMember(item)}>
-								<Text style={styles.enrollButtonText}>{item.enrolledAt ? 'Update' : 'Enroll'}</Text>
-							</TouchableOpacity> */}
-							<TouchableOpacity style={styles.startSessionButton} onPress={() => startSession(item)}>
-								<Text style={styles.startSessionButtonText}>Start Session</Text>
-							</TouchableOpacity>
-						</View>
-					</View>
+						{selectedMember?.id === item.id && (
+							<View style={styles.selectedIndicator}>
+								<Text style={styles.selectedIndicatorText}>✓</Text>
+							</View>
+						)}
+					</TouchableOpacity>
 				)}
 				ListEmptyComponent={
 					<Text style={styles.emptyText}>
@@ -73,20 +84,23 @@ export default function MembersScreen() {
 					// React Query will automatically refetch when we invalidate
 				}}
 			/>
-			{/* <View style={styles.createSection}>
-				<TextInput
-					style={styles.input}
-					placeholder='Enter member name'
-					value={newMemberName}
-					onChangeText={setNewMemberName}
-				/>
-				<TouchableOpacity style={styles.createButton} onPress={createMember} disabled={createMemberMutation.isPending}>
-					<Text style={styles.createButtonText}>
-						{createMemberMutation.isPending ? 'Creating...' : 'Create Member'}
+
+			{/* Start Session Button */}
+			<View style={styles.bottomSection}>
+				<TouchableOpacity
+					style={[styles.startSessionBottomButton, !selectedMember && styles.startSessionBottomButtonDisabled]}
+					onPress={startSession}
+					disabled={!selectedMember}>
+					<Text
+						style={[
+							styles.startSessionBottomButtonText,
+							!selectedMember && styles.startSessionBottomButtonTextDisabled,
+						]}>
+						{selectedMember ? `Start Session with ${selectedMember.name}` : 'Select a member to start session'}
 					</Text>
 				</TouchableOpacity>
-			</View> */}
-		</View>
+			</View>
+		</SafeAreaView>
 	);
 }
 
@@ -129,6 +143,9 @@ const styles = StyleSheet.create({
 		borderBottomWidth: 1,
 		borderBottomColor: '#e0e0e0',
 	},
+	selectedMemberCard: {
+		backgroundColor: '#E3F2FD',
+	},
 	buttonContainer: {
 		flexDirection: 'row',
 		gap: 8,
@@ -141,40 +158,61 @@ const styles = StyleSheet.create({
 		fontWeight: '600',
 		marginBottom: 4,
 	},
+	selectedMemberName: {
+		color: '#1976D2',
+	},
 	memberEmail: {
 		fontSize: 14,
 		color: '#666',
+	},
+	selectedMemberEmail: {
+		color: '#1976D2',
+	},
+	selectedIndicator: {
+		backgroundColor: '#4A90E2',
+		borderRadius: 12,
+		width: 24,
+		height: 24,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	selectedIndicatorText: {
+		color: 'white',
+		fontWeight: 'bold',
+		fontSize: 14,
 	},
 	enrollStatus: {
 		fontSize: 12,
 		color: '#4CAF50',
 		marginTop: 4,
 	},
-	enrollButton: {
-		backgroundColor: '#28a745',
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderRadius: 6,
-	},
-	enrollButtonText: {
-		color: 'white',
-		fontWeight: '600',
-		fontSize: 12,
-	},
-	startSessionButton: {
-		backgroundColor: '#4A90E2',
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderRadius: 6,
-	},
-	startSessionButtonText: {
-		color: 'white',
-		fontWeight: '600',
-		fontSize: 12,
-	},
 	emptyText: {
 		textAlign: 'center',
 		padding: 32,
 		color: '#666',
+	},
+	bottomSection: {
+		backgroundColor: 'white',
+		padding: 16,
+		borderTopWidth: 1,
+		borderTopColor: '#e0e0e0',
+		marginBottom: 48,
+	},
+	startSessionBottomButton: {
+		backgroundColor: '#4A90E2',
+		padding: 16,
+		borderRadius: 8,
+		alignItems: 'center',
+	},
+	startSessionBottomButtonDisabled: {
+		backgroundColor: '#ccc',
+	},
+	startSessionBottomButtonText: {
+		color: 'white',
+		fontWeight: '600',
+		fontSize: 16,
+	},
+	startSessionBottomButtonTextDisabled: {
+		color: '#888',
 	},
 });

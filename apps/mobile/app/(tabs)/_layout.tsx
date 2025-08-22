@@ -36,7 +36,7 @@ export default function TabLayout() {
 				name='members'
 				options={{
 					title: 'Members',
-					headerTitle: 'Members & Sessions',
+					headerTitle: 'Members',
 					tabBarIcon: ({ color }) => <IconSymbol size={28} name='person.2' color={color} />,
 				}}
 			/>

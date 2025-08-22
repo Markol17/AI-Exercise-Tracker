@@ -55,11 +55,6 @@ export default function ExerciseSelectionScreen() {
 	return (
 		<SafeAreaView style={styles.container}>
 			<ScrollView style={styles.container}>
-				<View style={styles.header}>
-					<Text style={styles.title}>Select Exercise</Text>
-					<Text style={styles.subtitle}>Choose which exercise to track for {memberName}</Text>
-				</View>
-
 				<View style={styles.exerciseGrid}>
 					{EXERCISES.map((exercise) => (
 						<TouchableOpacity
@@ -103,21 +98,16 @@ const styles = StyleSheet.create({
 		flex: 1,
 		backgroundColor: '#f5f5f5',
 	},
-	header: {
-		padding: 20,
+	subtitle: {
+		padding: 16,
 		backgroundColor: 'white',
 		borderBottomWidth: 1,
 		borderBottomColor: '#e0e0e0',
 	},
-	title: {
-		fontSize: 24,
-		fontWeight: 'bold',
-		marginBottom: 8,
-		color: '#333',
-	},
-	subtitle: {
+	subtitleText: {
 		fontSize: 16,
 		color: '#666',
+		textAlign: 'center',
 	},
 	exerciseGrid: {
 		padding: 16,
