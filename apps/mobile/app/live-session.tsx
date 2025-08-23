@@ -23,14 +23,11 @@ export default function LiveSessionScreen() {
 	const [sessionDuration, setSessionDuration] = useState<string>('00:00');
 	const endSessionMutation = useEndSession();
 
-	const { currentExercise, repCount, plankDuration, shoulderTapCount, isConnected, connectionStatus } =
-		useExerciseStats();
+	const { repCount, plankDuration, shoulderTapCount, isConnected } = useExerciseStats();
 
-	// WebRTC video streaming with integrated WebSocket
-	const { remoteStream, connectionState, isStreaming, startVideoStream, stopVideoStream, webSocketState } =
-		useWebRTCVideoStream({
-			sessionId: sessionId || '',
-		});
+	const { remoteStream, connectionState, webSocketState, stopVideoStream } = useWebRTCVideoStream({
+		sessionId,
+	});
 
 	const { sendJsonMessage } = useWebSocket(process.env.EXPO_PUBLIC_WS_URL, {
 		share: true,
@@ -50,10 +47,8 @@ export default function LiveSessionScreen() {
 		return () => clearInterval(interval);
 	}, [sessionStartTime]);
 
-	// Send session start message once when ready
 	useEffect(() => {
 		if (webSocketState === ReadyState.OPEN && sessionId && exercise) {
-			// Send session start message with exercise type
 			sendJsonMessage({
 				type: 'session_start',
 				sessionId,
@@ -62,13 +57,6 @@ export default function LiveSessionScreen() {
 			});
 		}
 	}, [webSocketState, sessionId, exercise, memberId, sendJsonMessage]);
-
-	// Clean up on unmount
-	useEffect(() => {
-		return () => {
-			stopVideoStream();
-		};
-	}, [stopVideoStream]);
 
 	const endSession = () => {
 		Alert.alert('End Session', `Are you sure you want to end the session for ${memberName}?`, [
@@ -99,7 +87,7 @@ export default function LiveSessionScreen() {
 	return (
 		<View style={styles.container}>
 			<View style={styles.cameraContainer}>
-				{isStreaming && remoteStream ? (
+				{remoteStream ? (
 					<View style={styles.videoContainer}>
 						<VideoStream stream={remoteStream} style={styles.videoStream} objectFit='contain' mirror={false} />
 						<View style={styles.debugOverlay}>
@@ -142,11 +130,6 @@ export default function LiveSessionScreen() {
 							<Text style={styles.cameraPlaceholderText}>Connecting to Camera</Text>
 							<Text style={styles.cameraPlaceholderSubtext}>WebRTC Status: {connectionState}</Text>
 							<Text style={styles.cameraPlaceholderSubtext}>Exercise: {exercise}</Text>
-							{webSocketState === ReadyState.OPEN && (
-								<TouchableOpacity style={styles.retryButton} onPress={startVideoStream}>
-									<Text style={styles.retryButtonText}>Retry Connection</Text>
-								</TouchableOpacity>
-							)}
 						</View>
 					</View>
 				) : (
