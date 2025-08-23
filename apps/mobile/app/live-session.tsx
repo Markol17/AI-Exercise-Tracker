@@ -101,8 +101,7 @@ export default function LiveSessionScreen() {
 			<View style={styles.cameraContainer}>
 				{isStreaming && remoteStream ? (
 					<View style={styles.videoContainer}>
-						<VideoStream stream={remoteStream} style={styles.videoStream} objectFit='cover' mirror={false} />
-						{/* Debug Overlay */}
+						<VideoStream stream={remoteStream} style={styles.videoStream} objectFit='contain' mirror={false} />
 						<View style={styles.debugOverlay}>
 							<View style={styles.debugHeader}>
 								<Text style={styles.debugTitle}>{exercise}</Text>

@@ -196,7 +196,6 @@ const styles = StyleSheet.create({
 		padding: 16,
 		borderTopWidth: 1,
 		borderTopColor: '#e0e0e0',
-		marginBottom: 48,
 	},
 	startSessionBottomButton: {
 		backgroundColor: '#4A90E2',
