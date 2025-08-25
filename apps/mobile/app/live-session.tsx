@@ -2,7 +2,7 @@ import { VideoStream } from '@/components/VideoStream';
 import { useEndSession, useExerciseStats } from '@/hooks/api';
 import { useWebRTCVideoStream } from '@/hooks/useWebRTCVideoStream';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 
@@ -19,7 +19,7 @@ export default function LiveSessionScreen() {
 		exercise: string;
 	}>();
 
-	const [sessionStartTime] = useState<Date>(new Date());
+	const sessionStartTime = useRef<Date>(new Date());
 	const [sessionDuration, setSessionDuration] = useState<string>('00:00');
 	const endSessionMutation = useEndSession();
 
@@ -38,14 +38,14 @@ export default function LiveSessionScreen() {
 	useEffect(() => {
 		const interval = setInterval(() => {
 			const now = new Date();
-			const diff = Math.floor((now.getTime() - sessionStartTime.getTime()) / 1000);
+			const diff = Math.floor((now.getTime() - sessionStartTime.current.getTime()) / 1000);
 			const minutes = Math.floor(diff / 60);
 			const seconds = diff % 60;
 			setSessionDuration(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
 		}, 1000);
 
 		return () => clearInterval(interval);
-	}, [sessionStartTime]);
+	}, []);
 
 	useEffect(() => {
 		if (webSocketState === ReadyState.OPEN && sessionId && exercise) {

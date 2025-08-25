@@ -55,24 +55,6 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		},
 	});
 
-	// Register as mobile client when WebSocket connects
-	// useEffect(() => {
-	// 	if (readyState === ReadyState.OPEN && sessionId && !isRegistered.current) {
-	// 		const registerMessage = {
-	// 			type: 'register',
-	// 			sessionId,
-	// 			role: 'mobile',
-	// 		};
-	// 		sendJsonMessage(registerMessage);
-	// 		isRegistered.current = true;
-	// 	}
-
-	// 	// Reset registration flag when disconnected
-	// 	if (readyState !== ReadyState.OPEN) {
-	// 		isRegistered.current = false;
-	// 	}
-	// }, [readyState, sessionId, sendJsonMessage]);
-
 	const sendSignaling = (type: string, data: any) => {
 		const message = {
 			type: 'webrtc_signaling',
@@ -136,47 +118,52 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		return peerConnection;
 	};
 
-	const handleSignaling = async (signaling: any) => {
-		const { type, data } = signaling;
+	const handleOffer = async (data: any) => {
+		const pc = initializePeerConnection();
 
 		try {
-			if (type === 'offer') {
-				const pc = initializePeerConnection();
+			const offer = new RTCSessionDescription(data);
+			await pc.setRemoteDescription(offer);
 
-				try {
-					const offer = new RTCSessionDescription(data);
-					await pc.setRemoteDescription(offer);
+			if (pc.signalingState === 'have-remote-offer') {
+				const answer = await pc.createAnswer();
+				await pc.setLocalDescription(answer);
 
-					if (pc.signalingState === 'have-remote-offer') {
-						const answer = await pc.createAnswer();
-						await pc.setLocalDescription(answer);
-
-						sendSignaling('answer', {
-							type: answer.type,
-							sdp: answer.sdp,
-						});
-					} else {
-						console.error(`Cannot create answer, signaling state is: ${pc.signalingState}`);
-					}
-				} catch (error) {
-					console.error('Error handling offer:', error);
-				}
-			} else if (type === 'ice-candidate') {
-				// Add ICE candidate
-				if (pcRef.current && pcRef.current.remoteDescription) {
-					const candidate = new RTCIceCandidate({
-						candidate: data.candidate,
-						sdpMid: data.sdpMid,
-						sdpMLineIndex: data.sdpMLineIndex,
-					});
-					await pcRef.current.addIceCandidate(candidate);
-					console.log('Added ICE candidate to peer connection');
-				} else {
-					console.warn('Received ICE candidate but no remote description set yet');
-				}
+				sendSignaling('answer', {
+					type: answer.type,
+					sdp: answer.sdp,
+				});
+			} else {
+				console.error(`Cannot create answer, signaling state is: ${pc.signalingState}`);
 			}
 		} catch (error) {
-			console.error(`Error handling ${type} signaling:`, error);
+			console.error('Error handling offer:', error);
+		}
+	};
+
+	const handleIceCandidate = async (data: any) => {
+		if (pcRef.current && pcRef.current.remoteDescription) {
+			const candidate = new RTCIceCandidate({
+				candidate: data.candidate,
+				sdpMid: data.sdpMid,
+				sdpMLineIndex: data.sdpMLineIndex,
+			});
+			await pcRef.current.addIceCandidate(candidate);
+			console.log('Added ICE candidate to peer connection');
+		} else {
+			console.warn('Received ICE candidate but no remote description set yet');
+		}
+	};
+
+	const handleSignaling = async (signaling: {
+		type: 'offer' | 'ice-candidate';
+		data: RTCSessionDescriptionInit | RTCIceCandidateInit;
+	}) => {
+		const { type, data } = signaling;
+		if (type === 'offer') {
+			await handleOffer(data);
+		} else if (type === 'ice-candidate') {
+			await handleIceCandidate(data);
 		}
 	};
 
