@@ -1,5 +1,5 @@
 {
-	"name": "vero-wellness",
+	"name": "ai-exercise-tracker",
 	"version": "1.0.0",
 	"private": true,
 	"workspaces": [
@@ -8,21 +8,21 @@
 	],
 	"scripts": {
 		"dev": "npm run dev:server & npm run dev:perception & npm run dev:mobile",
-		"dev:server": "npm run dev --workspace=@vero/server",
-		"dev:mobile": "npm run start --workspace=@vero/mobile",
-		"dev:run:ios": "npm run ios --workspace=@vero/mobile",
-		"dev:run:android": "npm run android --workspace=@vero/mobile",
-		"dev:run:web": "npm run web --workspace=@vero/mobile",
+		"dev:server": "npm run dev --workspace=@ai-exercise-tracker/server",
+		"dev:mobile": "npm run start --workspace=@ai-exercise-tracker/mobile",
+		"dev:run:ios": "npm run ios --workspace=@ai-exercise-tracker/mobile",
+		"dev:run:android": "npm run android --workspace=@ai-exercise-tracker/mobile",
+		"dev:run:web": "npm run web --workspace=@ai-exercise-tracker/mobile",
 		"dev:perception": "cd apps/perception && ./run.sh",
 		"build": "npm run build --workspaces",
 		"build:tsc": "tsc --build packages/api packages/auth packages/db apps/server apps/mobile",
 		"type-check": "tsc --build --dry packages/api packages/auth packages/db apps/server apps/mobile",
 		"db:up": "docker-compose up -d postgres",
 		"db:down": "docker-compose down",
-		"db:migrate": "npm run db:migrate --workspace=@vero/db",
-		"db:generate": "npm run db:generate --workspace=@vero/db",
-		"db:studio": "npm run db:studio --workspace=@vero/db",
-		"db:push": "npm run db:push --workspace=@vero/db"
+		"db:migrate": "npm run db:migrate --workspace=@ai-exercise-tracker/db",
+		"db:generate": "npm run db:generate --workspace=@ai-exercise-tracker/db",
+		"db:studio": "npm run db:studio --workspace=@ai-exercise-tracker/db",
+		"db:push": "npm run db:push --workspace=@ai-exercise-tracker/db"
 	},
 	"devDependencies": {
 		"@types/node": "^20.0.0",

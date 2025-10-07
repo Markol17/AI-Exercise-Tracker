@@ -1,5 +1,5 @@
+import { db, weights } from '@ai-exercise-tracker/db';
 import { os } from '@orpc/server';
-import { db, weights } from '@vero/db';
 import { and, desc, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import {

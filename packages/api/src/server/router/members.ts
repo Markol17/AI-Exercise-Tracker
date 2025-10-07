@@ -1,4 +1,4 @@
-import { db, members } from '@vero/db';
+import { db, members } from '@ai-exercise-tracker/db';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 

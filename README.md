@@ -1,4 +1,4 @@
-# Vero Wellness - Computer Vision Fitness Tracking POC
+# AI Exercise Tracker - Computer Vision Fitness Tracking
 
 A proof-of-concept system for real-time multi-person fitness tracking using computer vision, featuring exercise recognition, rep counting, and identity enrollment. Built as a TypeScript monorepo with shared packages and type-safe APIs.
 
@@ -82,7 +82,7 @@ npm run dev:mobile
 ## Project Structure
 
 ```text
-vero-wellness/
+ai-exercise-tracker/
 ├── apps/
 │   ├── server/          # TypeScript API server (Express + oRPC)
 │   ├── mobile/          # React Native/Expo mobile app (Expo Router)
@@ -102,11 +102,11 @@ vero-wellness/
 
 The project uses npm workspaces for a type-safe development experience:
 
-- **`@vero/api`**: Shared oRPC contracts and type-safe client/server setup
-- **`@vero/db`**: Database schema and migrations using Drizzle ORM
-- **`@vero/auth`**: Authentication types and utilities
-- **`@vero/server`**: Express API server with oRPC endpoints
-- **`@vero/mobile`**: React Native app with Expo Router
+- **`@ai-exercise-tracker/api`**: Shared oRPC contracts and type-safe client/server setup
+- **`@ai-exercise-tracker/db`**: Database schema and migrations using Drizzle ORM
+- **`@ai-exercise-tracker/auth`**: Authentication types and utilities
+- **`@ai-exercise-tracker/server`**: Express API server with oRPC endpoints
+- **`@ai-exercise-tracker/mobile`**: React Native app with Expo Router
 
 All packages share TypeScript configurations and import each other without build steps [[memory:6541546]].
 
@@ -154,27 +154,6 @@ The React Native app built with Expo Router provides:
 
 ## Configuration
 
-### Environment Variables
-
-The project uses `.env` files for configuration [[memory:4870235]]:
-
-**Server** (`apps/server/.env`):
-
-```env
-DATABASE_URL=postgresql://vero:vero_wellness_2024@localhost:5432/vero_wellness
-INGESTION_SECRET=poc_secret_key_2024
-PORT=3000
-WS_PORT=3001
-```
-
-**Perception** (`apps/perception/.env`):
-
-```env
-API_BASE_URL=http://localhost:3000/api
-WS_URL=ws://192.168.1.103:3001
-INGESTION_SECRET=poc_secret_key_2024
-```
-
 ### Database Management
 
 The project includes convenient npm scripts for database operations:
@@ -219,9 +198,9 @@ npm run db:studio      # Open Drizzle Studio web interface
 
 ### Python dependencies
 
-- Activate conda environment: `conda activate vero`
+- Activate conda environment: `conda activate ai-exercise-tracker`
 - Reinstall requirements: `pip install -r apps/perception/requirements.txt`
-- Recreate environment: `conda env remove -n vero && conda env create -f apps/perception/environment.yml`
+- Recreate environment: `conda env remove -n ai-exercise-tracker && conda env create -f apps/perception/environment.yml`
 
 ### TypeScript workspace issues
 

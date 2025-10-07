@@ -1,4 +1,4 @@
-name: vero-perception
+name: ai-exercise-tracker
 channels:
   - conda-forge
   - pytorch

@@ -1,5 +1,5 @@
+import { reactQueryApiClient } from '@ai-exercise-tracker/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { reactQueryApiClient } from '@vero/api';
 import { useEffect, useState } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 
@@ -64,22 +64,22 @@ export function useExerciseStats() {
 
 				if (data.type === 'exercise_stats' && data.stats) {
 					const { stats } = data;
-					
+
 					// Update current exercise
 					if (stats.exercise) {
 						setCurrentExercise(stats.exercise);
 					}
-					
+
 					// Update rep count
 					if (typeof stats.rep_count === 'number') {
 						setRepCount(stats.rep_count);
 					}
-					
+
 					// Update plank duration
 					if (typeof stats.plank_duration === 'number') {
 						setPlankDuration(stats.plank_duration);
 					}
-					
+
 					// Update shoulder tap count
 					if (typeof stats.shoulder_tap_count === 'number') {
 						setShouldertapCount(stats.shoulder_tap_count);

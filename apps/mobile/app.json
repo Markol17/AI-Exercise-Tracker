@@ -1,17 +1,17 @@
 {
 	"expo": {
-		"name": "Vero Wellness",
-		"slug": "vero-wellness",
+		"name": "AI Exercise Tracker",
+		"slug": "ai-exercise-tracker",
 		"version": "1.0.0",
 		"orientation": "portrait",
 		"icon": "./assets/images/icon.png",
-		"scheme": "VeroWellness",
+		"scheme": "AIExerciseTracker",
 		"userInterfaceStyle": "automatic",
 		"newArchEnabled": true,
 		"ios": {
 			"supportsTablet": true,
 			"bitcode": false,
-			"bundleIdentifier": "com.anonymous.vero-wellness"
+			"bundleIdentifier": "com.anonymous.ai-exercise-tracker"
 		},
 		"android": {
 			"adaptiveIcon": {
@@ -29,7 +29,7 @@
 				"android.permission.WAKE_LOCK",
 				"android.permission.BLUETOOTH"
 			],
-			"package": "com.anonymous.verowellness"
+			"package": "com.anonymous.aiexercisetracker"
 		},
 		"web": {
 			"bundler": "metro",

@@ -28,7 +28,7 @@ export default function TabLayout() {
 				name='index'
 				options={{
 					title: 'Home',
-					headerTitle: 'Vero Wellness',
+					headerTitle: 'AI Exercise Tracker',
 					tabBarIcon: ({ color }) => <IconSymbol size={28} name='house.fill' color={color} />,
 				}}
 			/>

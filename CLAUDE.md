@@ -1,4 +1,4 @@
-# Vero Wellness — POC Implementation Status
+# AI Exercise Tracker — POC Implementation Status
 
 ## Objective
 
@@ -59,7 +59,7 @@ The design has been architected to evolve cleanly to **multi-camera** and **sens
   - Real-time event emission to server API (person_detected, rep_completed, etc.)
   - Conda environment with Apple Silicon optimization
 
-- **TypeScript Server (@vero/server):**
+- **TypeScript Server (@ai-exercise-tracker/server):**
 
   - oRPC with OpenAPI documentation at `/api`
   - Drizzle ORM with Postgres (members, sessions, events, weights tables)
@@ -68,7 +68,7 @@ The design has been architected to evolve cleanly to **multi-camera** and **sens
   - Health check endpoint with system status
   - CORS configuration for mobile development
 
-- **Mobile App (@vero/mobile):**
+- **Mobile App (@ai-exercise-tracker/mobile):**
   - React Native/Expo with TypeScript
   - Session management (start/stop) with member selection
   - Real-time connection status indicators
@@ -108,21 +108,21 @@ The design has been architected to evolve cleanly to **multi-camera** and **sens
 - `src/utils.py` - Utility functions and helpers
 - `src/websocket_client.py` - WebSocket communication with server
 
-### TypeScript Server (@vero/server) - Current Implementation
+### TypeScript Server (@ai-exercise-tracker/server) - Current Implementation
 
-- **Contracts:** Zod schemas in `@vero/api/shared/contracts.ts` with 39 validated endpoints
+- **Contracts:** Zod schemas in `@ai-exercise-tracker/api/shared/contracts.ts` with 39 validated endpoints
 - **oRPC:** Full type-safe procedures for members, sessions, events, and weights with OpenAPI docs
 - **Ingestion:** `/api/events/ingest` endpoint with token auth, validation, and Postgres persistence
 - **Realtime:** WebSocket server on port 3001 with session-scoped event broadcasting
-- **Data lifecycle:** Drizzle migrations in `@vero/db` with indexed tables and relationships
+- **Data lifecycle:** Drizzle migrations in `@ai-exercise-tracker/db` with indexed tables and relationships
 - **Security (POC level):** INGESTION_SECRET token, CORS for mobile, health monitoring
 
 **Package Structure:**
 
-- `@vero/api` - Shared contracts and client/server implementations
-- `@vero/db` - Drizzle schema, migrations, and database configuration
-- `@vero/auth` - Authentication types (prepared for future expansion)
-- `@vero/server` - Express app with oRPC and WebSocket integration
+- `@ai-exercise-tracker/api` - Shared contracts and client/server implementations
+- `@ai-exercise-tracker/db` - Drizzle schema, migrations, and database configuration
+- `@ai-exercise-tracker/auth` - Authentication types (prepared for future expansion)
+- `@ai-exercise-tracker/server` - Express app with oRPC and WebSocket integration
 
 **Key Endpoints:**
 
@@ -130,7 +130,7 @@ The design has been architected to evolve cleanly to **multi-camera** and **sens
 - `/rpc` - oRPC type-safe procedure calls
 - `/health` - System status with database and WebSocket info
 
-### Mobile (@vero/mobile) - Current Implementation
+### Mobile (@ai-exercise-tracker/mobile) - Current Implementation
 
 - **Onboarding & consent:** Member creation UI ready, photo capture and enrollment pending integration
 - **Sessions:** Complete start/stop workflow with member selection and real-time status indicators
@@ -321,7 +321,7 @@ The design has been architected to evolve cleanly to **multi-camera** and **sens
 
 ### Perception (Python - Conda Environment) [[memory:4870235]]
 
-- **Environment:** Conda environment `vero` with Python 3.11, optimized for Apple Silicon
+- **Environment:** Conda environment `ai-exercise-tracker` with Python 3.11, optimized for Apple Silicon
 - **Computer Vision:** YOLOv8n (ultralytics) + MediaPipe for pose estimation
 - **Dependencies:** torch>=2.0.0, opencv, face-recognition, dlib, scipy
 - **Configuration:** Environment variables for camera index, frame rate, confidence thresholds
@@ -345,9 +345,9 @@ The design has been architected to evolve cleanly to **multi-camera** and **sens
 
 ### Shared Packages (TypeScript Monorepo) [[memory:6541546]]
 
-- **@vero/api:** Shared contracts, client/server implementations, oRPC definitions
-- **@vero/db:** Drizzle schema, migrations, and database configuration
-- **@vero/auth:** Authentication types and utilities (prepared for expansion)
+- **@ai-exercise-tracker/api:** Shared contracts, client/server implementations, oRPC definitions
+- **@ai-exercise-tracker/db:** Drizzle schema, migrations, and database configuration
+- **@ai-exercise-tracker/auth:** Authentication types and utilities (prepared for expansion)
 - **Workspace management:** npm workspaces with build orchestration scripts
 
 ## Risk Mitigation & Current Status
@@ -412,7 +412,7 @@ The design has been architected to evolve cleanly to **multi-camera** and **sens
 ### Server Environment (.env)
 
 ```bash
-DATABASE_URL=postgresql://vero:vero_wellness_2024@localhost:5432/vero_wellness
+DATABASE_URL=postgresql://ai_exercise_tracker:ai_exercise_tracker_2024@localhost:5432/ai_exercise_tracker
 PORT=3000
 WS_PORT=3001
 INGESTION_SECRET=your-secret-token

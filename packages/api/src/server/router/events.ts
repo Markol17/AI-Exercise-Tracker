@@ -1,5 +1,5 @@
+import { db, events } from '@ai-exercise-tracker/db';
 import { os } from '@orpc/server';
-import { db, events } from '@vero/db';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { eventSchema, getRecentEventsSchema, ingestEventsSchema } from '../../shared/orpc/contracts';

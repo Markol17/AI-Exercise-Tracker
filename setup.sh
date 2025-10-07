@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "🏋️ Vero Wellness POC Setup"
-echo "=========================="
+echo "🏋️ AI Exercise Tracker POC Setup"
+echo "=================================="
 
 echo "📦 Installing Node.js dependencies..."
 npm install
@@ -20,9 +20,9 @@ cd ../..
 
 echo "🐍 Setting up Python perception environment..."
 cd apps/perception
-echo "Creating conda environment 'vero-perception'..."
+echo "Creating conda environment 'ai-exercise-tracker'..."
 conda env create -f environment.yml
-echo "Environment 'vero-perception' created successfully!"
+echo "Environment 'ai-exercise-tracker' created successfully!"
 echo "Note: The run script will automatically activate the environment when needed."
 cd ../..
 

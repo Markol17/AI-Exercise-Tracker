@@ -1,5 +1,5 @@
 {
-	"name": "@vero/api",
+	"name": "@ai-exercise-tracker/api",
 	"version": "1.0.0",
 	"main": "src/client/index.ts",
 	"types": "src/client/index.ts",
@@ -32,7 +32,7 @@
 		"@orpc/server": "^1.8.1",
 		"@orpc/tanstack-query": "^1.8.1",
 		"@orpc/zod": "^1.8.1",
-		"@vero/db": "*",
+		"@ai-exercise-tracker/db": "*",
 		"drizzle-orm": "^0.44.4",
 		"nanoid": "^5.0.0",
 		"zod": "^3.22.0",

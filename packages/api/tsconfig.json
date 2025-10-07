@@ -16,7 +16,7 @@
 		"composite": true,
 		"baseUrl": ".",
 		"paths": {
-			"@vero/db/*": ["../db/src/*"]
+			"@ai-exercise-tracker/db/*": ["../db/src/*"]
 		}
 	},
 	"include": ["src/**/*"],

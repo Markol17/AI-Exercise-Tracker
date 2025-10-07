@@ -1,4 +1,3 @@
-import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins';
 import {
 	appRouter,
 	initWebSocketServer,
@@ -7,8 +6,9 @@ import {
 	RPCHandler,
 	SmartCoercionPlugin,
 	ZodToJsonSchemaConverter,
-} from '@vero/api/server';
-import { allContracts } from '@vero/api/shared';
+} from '@ai-exercise-tracker/api/server';
+import { allContracts } from '@ai-exercise-tracker/api/shared';
+import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins';
 import cors from 'cors';
 import 'dotenv/config';
 import express from 'express';
@@ -36,7 +36,7 @@ const openAPIHandler = new OpenAPIHandler(appRouter, {
 			schemaConverters: [zodConverter],
 			specGenerateOptions: {
 				info: {
-					title: 'Vero Wellness API',
+					title: 'AI Exercise Tracker API',
 					version: '1.0.0',
 					description: 'API for managing gym members, sessions, and workout data',
 				},
