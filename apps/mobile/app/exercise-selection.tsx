@@ -1,7 +1,8 @@
 import { useCreateSession } from '@/hooks/api';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const EXERCISES = [
 	{ id: 'squat', name: 'Squats', description: 'Lower body strength' },

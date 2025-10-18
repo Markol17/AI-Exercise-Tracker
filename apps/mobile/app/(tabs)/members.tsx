@@ -1,7 +1,8 @@
 import { useCreateMember, useMembers } from '@/hooks/api';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MembersScreen() {
 	const [newMemberName, setNewMemberName] = useState('');
@@ -114,14 +115,6 @@ const styles = StyleSheet.create({
 		padding: 16,
 		borderBottomWidth: 1,
 		borderBottomColor: '#e0e0e0',
-	},
-	input: {
-		borderWidth: 1,
-		borderColor: '#ddd',
-		borderRadius: 8,
-		padding: 12,
-		fontSize: 16,
-		marginBottom: 12,
 	},
 	createButton: {
 		backgroundColor: '#4A90E2',
