@@ -10,10 +10,10 @@ A proof-of-concept system for real-time multi-person fitness tracking using comp
 │  Perception     │     │  Server      │     │  Native App │
 │  (MediaPipe)    │     │  (oRPC)      │     │  (Expo)     │
 └─────────────────┘     └──────────────┘     └─────────────┘
-        │                       │                     │
-        │                       ▼                     │
-        │                 ┌──────────┐               │
-        └────────────────▶│ Postgres │◀──────────────┘
+                                │
+                                ▼
+                          ┌──────────┐
+                          │ Postgres │
                           └──────────┘
 
 Monorepo Structure:
@@ -207,14 +207,3 @@ npm run db:studio      # Open Drizzle Studio web interface
 - Clean and rebuild: `npm run build`
 - Type checking: `npm run type-check`
 - Ensure all packages are installed: `npm install`
-
-## Evolution Path
-
-This POC is designed to evolve into a production system with:
-
-- Multi-camera support and calibration
-- Hardware sensors (BLE/load cells)
-- Expanded exercise catalog
-- Advanced temporal models
-- Cloud deployment
-- Analytics dashboards
