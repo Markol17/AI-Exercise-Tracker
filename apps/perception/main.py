@@ -1,23 +1,14 @@
-#!/usr/bin/env python3
-"""
-Perception app with WebRTC streaming and WebSocket session control
-"""
-
 import asyncio
 import json
 import logging
 import os
 import sys
-import threading
 import time
 from typing import Optional
 
-import cv2
-import numpy as np
 import websockets
 from dotenv import load_dotenv
 
-# Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 from exercies import get_exercise_processor
