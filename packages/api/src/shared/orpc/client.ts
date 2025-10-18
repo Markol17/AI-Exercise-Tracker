@@ -3,7 +3,7 @@ import { RPCLink } from '@orpc/client/fetch';
 import { RouterClient } from '@orpc/server';
 import { AppRouter } from '../../server/router';
 
-const REST_URL = 'http://192.168.1.103:3000/rpc';
+const REST_URL = process.env.EXPO_PUBLIC_REST_URL || 'http://localhost:3000/rpc';
 
 function createApiLink() {
 	const appLink = new RPCLink({
@@ -13,7 +13,7 @@ function createApiLink() {
 		},
 		interceptors: [
 			onError((error) => {
-				console.error(error);
+				console.error('API Error:', error);
 			}),
 		],
 	});
