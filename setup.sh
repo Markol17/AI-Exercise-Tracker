@@ -20,6 +20,9 @@ create_env_file "packages/db"
 
 echo "📦 Installing Node.js dependencies..."
 npm install
+cd apps/mobile
+npm install
+cd ../..
 
 echo "🐘 Starting PostgreSQL database..."
 docker-compose up -d postgres
