@@ -68,7 +68,7 @@ export default function ExerciseSelectionScreen() {
 							<Text style={styles.exerciseDescription}>{exercise.description}</Text>
 							{selectedExercise === exercise.id && (
 								<View style={styles.selectedBadge}>
-									<Text style={styles.selectedBadgeText}>✓ Selected</Text>
+									<Text style={styles.selectedBadgeText}>Selected</Text>
 								</View>
 							)}
 						</TouchableOpacity>
