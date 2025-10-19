@@ -1,12 +1,8 @@
-"""
-Plank exercise detection for WebRTC streaming
-Based on original-perception implementation but without GUI
-"""
+import logging
+import time
 
 import cv2
 import numpy as np
-import logging
-import time
 from src.exercies.ExerciseBase import ExerciseBase
 from src.utils import ang
 

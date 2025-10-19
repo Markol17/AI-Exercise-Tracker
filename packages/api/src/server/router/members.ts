@@ -1,5 +1,4 @@
-import { db, members } from '@ai-exercise-tracker/db';
-import { eq } from 'drizzle-orm';
+import { db, eq, members } from '@ai-exercise-tracker/db';
 import { nanoid } from 'nanoid';
 
 import { os } from '@orpc/server';

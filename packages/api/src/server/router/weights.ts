@@ -1,6 +1,5 @@
-import { db, weights } from '@ai-exercise-tracker/db';
+import { and, db, desc, eq, weights } from '@ai-exercise-tracker/db';
 import { os } from '@orpc/server';
-import { and, desc, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import {
 	getWeightsByMemberSchema,

@@ -1,11 +1,7 @@
-"""
-Lunges exercise detection for WebRTC streaming
-Based on original-perception implementation but without GUI
-"""
+import logging
 
 import cv2
 import numpy as np
-import logging
 from src.exercies.ExerciseBase import ExerciseBase
 from src.utils import ang
 

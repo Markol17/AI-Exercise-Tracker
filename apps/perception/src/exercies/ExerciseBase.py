@@ -1,15 +1,12 @@
-"""
-Base Exercise class for WebRTC streaming
-Provides common functionality for all exercise types without GUI dependencies
-"""
+import logging
+import os
+from typing import Dict, Tuple
 
 import cv2
 import mediapipe as mp
 import numpy as np
-import logging
-import os
-from typing import Tuple, Optional, Dict
-from mediapipe.python.solutions.drawing_utils import _normalized_to_pixel_coordinates
+from mediapipe.python.solutions.drawing_utils import \
+    _normalized_to_pixel_coordinates
 
 logger = logging.getLogger(__name__)
 

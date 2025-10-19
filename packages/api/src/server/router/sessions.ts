@@ -1,6 +1,5 @@
-import { db, events, sessions } from '@ai-exercise-tracker/db';
+import { and, db, desc, eq, events, gte, isNull, lte, sessions } from '@ai-exercise-tracker/db';
 import { os } from '@orpc/server';
-import { and, desc, eq, gte, isNull, lte } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import {
 	createSessionSchema,

@@ -22,7 +22,8 @@
 		"db:migrate": "npm run db:migrate --workspace=@ai-exercise-tracker/db",
 		"db:generate": "npm run db:generate --workspace=@ai-exercise-tracker/db",
 		"db:studio": "npm run db:studio --workspace=@ai-exercise-tracker/db",
-		"db:push": "npm run db:push --workspace=@ai-exercise-tracker/db"
+		"db:push": "npm run db:push --workspace=@ai-exercise-tracker/db",
+		"clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && find . -name 'package-lock.json' -type f -delete"
 	},
 	"devDependencies": {
 		"@types/node": "^20.0.0",
