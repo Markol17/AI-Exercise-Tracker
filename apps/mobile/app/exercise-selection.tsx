@@ -1,5 +1,5 @@
 import { useCreateSession } from '@/hooks/api';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,11 +13,6 @@ const EXERCISES = [
 ];
 
 export default function ExerciseSelectionScreen() {
-	const { memberId, memberName } = useLocalSearchParams<{
-		memberId: string;
-		memberName: string;
-	}>();
-
 	const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
 	const createSessionMutation = useCreateSession();
 
@@ -28,34 +23,23 @@ export default function ExerciseSelectionScreen() {
 		}
 
 		try {
-			// Create session with member and exercise metadata
-			const session = await createSessionMutation.mutateAsync({
-				memberId,
-				metadata: {
-					exercise: selectedExercise,
-					startedAt: new Date().toISOString(),
-				},
-			});
-
-			// Navigate to live session with all required params
+			const session = await createSessionMutation.mutateAsync();
 			router.replace({
 				pathname: '/live-session',
 				params: {
 					sessionId: session.id,
-					memberId: memberId,
-					memberName: memberName,
 					exercise: selectedExercise,
 				},
 			});
 		} catch (error) {
-			Alert.alert('Error', 'Failed to create session');
+			Alert.alert('Error', `Failed to create session ${error}`);
 			console.error('Failed to create session:', error);
 		}
 	};
 
 	return (
-		<SafeAreaView style={styles.container}>
-			<ScrollView style={styles.container}>
+		<SafeAreaView style={styles.safeAreaContainer} edges={['bottom']}>
+			<ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
 				<View style={styles.exerciseGrid}>
 					{EXERCISES.map((exercise) => (
 						<TouchableOpacity
@@ -66,49 +50,39 @@ export default function ExerciseSelectionScreen() {
 								{exercise.name}
 							</Text>
 							<Text style={styles.exerciseDescription}>{exercise.description}</Text>
-							{selectedExercise === exercise.id && (
-								<View style={styles.selectedBadge}>
-									<Text style={styles.selectedBadgeText}>Selected</Text>
-								</View>
-							)}
 						</TouchableOpacity>
 					))}
 				</View>
-
-				<View style={styles.footer}>
-					<TouchableOpacity
-						style={[styles.startButton, !selectedExercise && styles.startButtonDisabled]}
-						onPress={startSession}
-						disabled={!selectedExercise || createSessionMutation.isPending}>
-						<Text style={styles.startButtonText}>
-							{createSessionMutation.isPending ? 'Starting...' : 'Start Session'}
-						</Text>
-					</TouchableOpacity>
-
-					<TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-						<Text style={styles.cancelButtonText}>Cancel</Text>
-					</TouchableOpacity>
-				</View>
 			</ScrollView>
+
+			<View style={styles.footer}>
+				<TouchableOpacity
+					style={[styles.startButton, !selectedExercise && styles.startButtonDisabled]}
+					onPress={startSession}
+					disabled={!selectedExercise || createSessionMutation.isPending}>
+					<Text style={styles.startButtonText}>
+						{createSessionMutation.isPending ? 'Starting...' : 'Start Session'}
+					</Text>
+				</TouchableOpacity>
+
+				<TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+					<Text style={styles.cancelButtonText}>Cancel</Text>
+				</TouchableOpacity>
+			</View>
 		</SafeAreaView>
 	);
 }
 
 const styles = StyleSheet.create({
-	container: {
+	safeAreaContainer: {
 		flex: 1,
 		backgroundColor: '#f5f5f5',
 	},
-	subtitle: {
-		padding: 16,
-		backgroundColor: 'white',
-		borderBottomWidth: 1,
-		borderBottomColor: '#e0e0e0',
+	container: {
+		flex: 1,
 	},
-	subtitleText: {
-		fontSize: 16,
-		color: '#666',
-		textAlign: 'center',
+	scrollContent: {
+		paddingBottom: 16,
 	},
 	exerciseGrid: {
 		padding: 16,
@@ -131,11 +105,6 @@ const styles = StyleSheet.create({
 		borderColor: '#4A90E2',
 		backgroundColor: '#f0f7ff',
 	},
-	exerciseIcon: {
-		fontSize: 36,
-		marginBottom: 12,
-		textAlign: 'center',
-	},
 	exerciseName: {
 		fontSize: 18,
 		fontWeight: '600',
@@ -151,22 +120,12 @@ const styles = StyleSheet.create({
 		color: '#666',
 		textAlign: 'center',
 	},
-	selectedBadge: {
-		backgroundColor: '#4A90E2',
-		paddingHorizontal: 12,
-		paddingVertical: 4,
-		borderRadius: 12,
-		marginTop: 8,
-		alignSelf: 'center',
-	},
-	selectedBadgeText: {
-		color: 'white',
-		fontSize: 12,
-		fontWeight: '600',
-	},
 	footer: {
 		padding: 20,
 		gap: 12,
+		backgroundColor: '#f5f5f5',
+		borderTopWidth: 1,
+		borderTopColor: '#e0e0e0',
 	},
 	startButton: {
 		backgroundColor: '#28a745',

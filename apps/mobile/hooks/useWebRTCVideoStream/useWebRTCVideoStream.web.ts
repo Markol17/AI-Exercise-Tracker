@@ -17,16 +17,13 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 	const pcRef = useRef<RTCPeerConnection | null>(null);
 	const isRegistered = useRef<boolean>(false);
 
-	// WebRTC configuration for web browsers
 	const pcConfig = useMemo(
 		() => ({
-			// Use STUN servers for web (NAT traversal)
 			iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }],
 		}),
 		[]
 	);
 
-	// WebSocket connection with message handling
 	const { readyState, sendJsonMessage } = useWebSocket(process.env.EXPO_PUBLIC_WS_URL, {
 		share: true,
 		onMessage: (event) => {
@@ -46,7 +43,6 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		},
 	});
 
-	// Send WebRTC signaling message
 	const sendSignaling = useCallback(
 		(type: string, data: any) => {
 			const message = {
@@ -63,7 +59,6 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		[sendJsonMessage]
 	);
 
-	// Initialize peer connection for web
 	const initializePeerConnection = useCallback(() => {
 		if (pcRef.current) {
 			pcRef.current.close();
@@ -72,7 +67,6 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		const pc = new RTCPeerConnection(pcConfig);
 		pcRef.current = pc;
 
-		// Handle connection state changes
 		pc.onconnectionstatechange = () => {
 			const state = pc.connectionState;
 			setConnectionState(state);
@@ -87,7 +81,6 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 			}
 		};
 
-		// Handle ICE candidates
 		pc.onicecandidate = (event) => {
 			if (event.candidate) {
 				sendSignaling('ice-candidate', {
@@ -98,7 +91,6 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 			}
 		};
 
-		// Handle remote stream - web browsers use ontrack
 		pc.ontrack = (event) => {
 			console.log('📺 Received remote video track');
 			if (event.streams && event.streams[0]) {
@@ -110,7 +102,6 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		return pc;
 	}, [pcConfig, sendSignaling]);
 
-	// Handle incoming signaling messages
 	const handleSignaling = useCallback(
 		async (signaling: any) => {
 			const { type, data } = signaling;
@@ -118,18 +109,15 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 
 			try {
 				if (type === 'offer') {
-					// Initialize peer connection if needed
 					if (!pcRef.current) {
 						initializePeerConnection();
 					}
 
 					const pc = pcRef.current!;
 
-					// Set remote description
 					const offer = new RTCSessionDescription(data);
 					await pc.setRemoteDescription(offer);
 
-					// Create and send answer
 					const answer = await pc.createAnswer();
 					await pc.setLocalDescription(answer);
 
@@ -140,7 +128,6 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 
 					console.log('✅ Sent answer to perception app');
 				} else if (type === 'ice-candidate') {
-					// Add ICE candidate
 					if (pcRef.current) {
 						const candidate = new RTCIceCandidate({
 							candidate: data.candidate,
@@ -158,7 +145,6 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		[sendSignaling, initializePeerConnection]
 	);
 
-	// Register as mobile client when WebSocket connects
 	useEffect(() => {
 		if (readyState === ReadyState.OPEN && sessionId && !isRegistered.current) {
 			const registerMessage = {
@@ -171,13 +157,11 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 			console.log(`📱 Registered as web client for session ${sessionId}`);
 		}
 
-		// Reset registration flag when disconnected
 		if (readyState !== ReadyState.OPEN) {
 			isRegistered.current = false;
 		}
 	}, [readyState, sessionId, sendJsonMessage]);
 
-	// Start video stream request
 	const startVideoStream = useCallback(() => {
 		if (readyState === ReadyState.OPEN && isRegistered.current) {
 			initializePeerConnection();
@@ -187,7 +171,6 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		}
 	}, [readyState, initializePeerConnection]);
 
-	// Stop video stream
 	const stopVideoStream = useCallback(() => {
 		if (pcRef.current) {
 			pcRef.current.close();
@@ -199,7 +182,6 @@ export function useWebRTCVideoStream({ sessionId }: WebRTCVideoStreamProps) {
 		console.log('🛑 Stopped video stream (web)');
 	}, []);
 
-	// Cleanup on unmount
 	useEffect(() => {
 		return () => {
 			stopVideoStream();

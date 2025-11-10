@@ -1,121 +1,97 @@
 import { relations } from 'drizzle-orm';
-import { index, integer, jsonb, pgTable, real, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { index, pgTable, real, timestamp, varchar } from 'drizzle-orm/pg-core';
 
-export const members = pgTable(
-	'members',
-	{
-		id: varchar('id', { length: 255 }).primaryKey(),
-		name: varchar('name', { length: 255 }).notNull(),
-		email: varchar('email', { length: 255 }),
-		enrolledAt: timestamp('enrolled_at'),
-		consentedAt: timestamp('consented_at'),
-		faceEmbedding: text('face_embedding'),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow().notNull(),
-	},
-	(table) => {
-		return {
-			emailIdx: index('email_idx').on(table.email),
-		};
-	}
-);
+export const users = pgTable('users', {
+	id: varchar('id', { length: 255 }).primaryKey(),
+	fingerprint: varchar('fingerprint', { length: 255 }).notNull().unique(),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
 
 export const sessions = pgTable(
 	'sessions',
 	{
 		id: varchar('id', { length: 255 }).primaryKey(),
+		userId: varchar('user_id', { length: 255 })
+			.notNull()
+			.references(() => users.id),
 		startedAt: timestamp('started_at').defaultNow().notNull(),
 		endedAt: timestamp('ended_at'),
-		memberId: varchar('member_id', { length: 255 }).references(() => members.id),
-		metadata: jsonb('metadata'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow().notNull(),
 	},
 	(table) => {
 		return {
-			memberIdx: index('member_idx').on(table.memberId),
+			userIdx: index('user_idx').on(table.userId),
 			startedAtIdx: index('started_at_idx').on(table.startedAt),
 		};
 	}
 );
 
-export const events = pgTable(
-	'events',
+export const sets = pgTable(
+	'sets',
 	{
 		id: varchar('id', { length: 255 }).primaryKey(),
-		type: varchar('type', { length: 50 }).notNull(),
+		exerciseType: varchar('type', { length: 50 }).notNull(),
 		sessionId: varchar('session_id', { length: 255 })
 			.notNull()
 			.references(() => sessions.id),
-		timestamp: timestamp('timestamp').defaultNow().notNull(),
-		source: varchar('source', { length: 20 }).notNull(),
-		confidence: real('confidence'),
-		metadata: jsonb('metadata'),
+		startedAt: timestamp('started_at').defaultNow().notNull(),
+		endedAt: timestamp('ended_at'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull(),
 	},
 	(table) => {
 		return {
 			sessionIdx: index('session_idx').on(table.sessionId),
-			typeIdx: index('type_idx').on(table.type),
-			timestampIdx: index('timestamp_idx').on(table.timestamp),
+			exerciseTypeIdx: index('type_idx').on(table.exerciseType),
 		};
 	}
 );
 
-export const weights = pgTable(
-	'weights',
+export const reps = pgTable(
+	'reps',
 	{
 		id: varchar('id', { length: 255 }).primaryKey(),
-		sessionId: varchar('session_id', { length: 255 })
+		setId: varchar('set_id', { length: 255 })
 			.notNull()
-			.references(() => sessions.id),
-		memberId: varchar('member_id', { length: 255 }).references(() => members.id),
-		setNumber: integer('set_number').notNull(),
-		exercise: varchar('exercise', { length: 100 }).notNull(),
-		value: real('value').notNull(),
-		unit: varchar('unit', { length: 10 }).notNull(),
-		source: varchar('source', { length: 20 }).notNull(),
-		confidence: real('confidence'),
-		timestamp: timestamp('timestamp').defaultNow().notNull(),
+			.references(() => sets.id),
+		accuracy: real('accuracy').notNull(),
+		startedAt: timestamp('started_at').defaultNow().notNull(),
+		endedAt: timestamp('ended_at'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull(),
 	},
 	(table) => {
 		return {
-			sessionIdx: index('weight_session_idx').on(table.sessionId),
-			memberIdx: index('weight_member_idx').on(table.memberId),
-			exerciseIdx: index('exercise_idx').on(table.exercise),
+			setIdx: index('set_idx').on(table.setId),
 		};
 	}
 );
 
-export const membersRelations = relations(members, ({ many }) => ({
+export const usersRelations = relations(users, ({ many }) => ({
 	sessions: many(sessions),
-	weights: many(weights),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({
-	member: one(members, {
-		fields: [sessions.memberId],
-		references: [members.id],
+	user: one(users, {
+		fields: [sessions.userId],
+		references: [users.id],
 	}),
-	events: many(events),
-	weights: many(weights),
+	sets: many(sets),
 }));
 
-export const eventsRelations = relations(events, ({ one }) => ({
+export const setsRelations = relations(sets, ({ one, many }) => ({
 	session: one(sessions, {
-		fields: [events.sessionId],
+		fields: [sets.sessionId],
 		references: [sessions.id],
 	}),
+	reps: many(reps),
 }));
 
-export const weightsRelations = relations(weights, ({ one }) => ({
-	session: one(sessions, {
-		fields: [weights.sessionId],
-		references: [sessions.id],
-	}),
-	member: one(members, {
-		fields: [weights.memberId],
-		references: [members.id],
+export const repsRelations = relations(reps, ({ one }) => ({
+	set: one(sets, {
+		fields: [reps.setId],
+		references: [sets.id],
 	}),
 }));

@@ -1,19 +1,15 @@
 import { reactQueryApiClient } from '@ai-exercise-tracker/api';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
+import { persistUserId, useDeviceIdentity } from './useDeviceIdentity';
 
-export function useMembers() {
-	return useQuery(reactQueryApiClient.members.list.queryOptions());
-}
-
-export function useCreateMember() {
-	const queryClient = useQueryClient();
-
+export function useGetOrCreateUser() {
 	return useMutation(
-		reactQueryApiClient.members.create.mutationOptions({
-			onSuccess: () => {
-				queryClient.invalidateQueries({ queryKey: ['members', 'list'] });
+		reactQueryApiClient.users.getOrCreate.mutationOptions({
+			onSuccess: async (data) => {
+				// Persist the user ID locally
+				await persistUserId(data.id);
 			},
 		})
 	);
@@ -21,14 +17,40 @@ export function useCreateMember() {
 
 export function useCreateSession() {
 	const queryClient = useQueryClient();
+	const { userId, fingerprint, isLoading } = useDeviceIdentity();
+	const getOrCreateUserMutation = useGetOrCreateUser();
 
-	return useMutation(
-		reactQueryApiClient.sessions.create.mutationOptions({
-			onSuccess: () => {
-				queryClient.invalidateQueries({ queryKey: ['sessions'] });
-			},
-		})
-	);
+	return useMutation({
+		mutationFn: async () => {
+			// Wait for device identity to be loaded
+			if (isLoading) {
+				throw new Error('Device identity is still loading');
+			}
+
+			let currentUserId = userId;
+
+			// Get or create user if we don't have a userId yet
+			if (!currentUserId && fingerprint) {
+				const user = await getOrCreateUserMutation.mutateAsync({ fingerprint });
+				currentUserId = user.id;
+			}
+
+			if (!currentUserId) {
+				throw new Error('Failed to get or create user');
+			}
+
+			// Create session with the user ID
+			const createMutationFn = reactQueryApiClient.sessions.create.mutationOptions().mutationFn;
+			if (!createMutationFn) {
+				throw new Error('Session create mutation not available');
+			}
+			const result = await createMutationFn({ userId: currentUserId }, undefined as any);
+			return result;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['sessions'] });
+		},
+	});
 }
 
 export function useEndSession() {
@@ -102,7 +124,6 @@ export function useExerciseStats() {
 	}[readyState];
 
 	useEffect(() => {
-		// Reset stats when disconnected
 		if (readyState !== ReadyState.OPEN) {
 			setCurrentExercise(null);
 			setRepCount(0);

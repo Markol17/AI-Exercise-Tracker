@@ -26,7 +26,6 @@ Monorepo Structure:
 ├─ packages/                                              │
 │  ├─ api/        # Shared oRPC contracts & client       │
 │  ├─ db/         # Database schema & migrations         │
-│  └─ auth/       # Authentication types                 │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -90,7 +89,6 @@ ai-exercise-tracker/
 ├── packages/
 │   ├── api/             # Shared oRPC contracts, client & server setup
 │   ├── db/              # Database schema, migrations (Drizzle ORM)
-│   └── auth/            # Authentication types and utilities
 ├── docker-compose.yml   # PostgreSQL database container
 ├── package.json         # Root workspace configuration
 └── setup.sh            # Automated setup script
@@ -104,7 +102,6 @@ The project uses npm workspaces for a type-safe development experience:
 
 - **`@ai-exercise-tracker/api`**: Shared oRPC contracts and type-safe client/server setup
 - **`@ai-exercise-tracker/db`**: Database schema and migrations using Drizzle ORM
-- **`@ai-exercise-tracker/auth`**: Authentication types and utilities
 - **`@ai-exercise-tracker/server`**: Express API server with oRPC endpoints
 - **`@ai-exercise-tracker/mobile`**: React Native app with Expo Router
 

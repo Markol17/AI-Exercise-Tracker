@@ -9,7 +9,6 @@
 	},
 	"dependencies": {
 		"@ai-exercise-tracker/api": "*",
-		"@ai-exercise-tracker/auth": "*",
 		"@ai-exercise-tracker/db": "*",
 		"cors": "^2.8.5",
 		"dotenv": "^16.6.1",

@@ -1,15 +1,11 @@
-import { eventsRouter } from './events';
 import { healthRouter } from './health';
-import { membersRouter } from './members';
 import { sessionsRouter } from './sessions';
-import { weightsRouter } from './weights';
+import { usersRouter } from './users';
 
 export const appRouter = {
 	health: healthRouter,
-	members: membersRouter,
+	users: usersRouter,
 	sessions: sessionsRouter,
-	weights: weightsRouter,
-	events: eventsRouter,
 };
 
 export type AppRouter = typeof appRouter;

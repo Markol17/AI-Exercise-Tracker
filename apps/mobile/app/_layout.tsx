@@ -5,6 +5,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useColorScheme } from '../hooks/useColorScheme';
 
 const queryClient = new QueryClient();
@@ -21,22 +22,24 @@ export default function RootLayout() {
 	}
 
 	return (
-		<QueryClientProvider client={queryClient}>
-			<ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-				<Stack screenOptions={{ headerShown: false }}>
-					<Stack.Screen name='(tabs)' />
-					<Stack.Screen name='+not-found' />
-					<Stack.Screen
-						name='exercise-selection'
-						options={{
-							headerShown: true,
-							title: 'Select Exercise',
-							headerBackTitle: 'Back',
-						}}
-					/>
-				</Stack>
-				<StatusBar style='auto' />
-			</ThemeProvider>
-		</QueryClientProvider>
+		<SafeAreaProvider>
+			<QueryClientProvider client={queryClient}>
+				<ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+					<Stack screenOptions={{ headerShown: false }}>
+						<Stack.Screen name='(tabs)' />
+						<Stack.Screen name='+not-found' />
+						<Stack.Screen
+							name='exercise-selection'
+							options={{
+								headerShown: true,
+								title: 'Select Exercise',
+								headerBackTitle: 'Back',
+							}}
+						/>
+					</Stack>
+					<StatusBar style='auto' />
+				</ThemeProvider>
+			</QueryClientProvider>
+		</SafeAreaProvider>
 	);
 }

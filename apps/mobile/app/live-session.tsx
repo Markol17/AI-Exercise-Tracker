@@ -12,10 +12,8 @@ export default function LiveSessionScreen() {
 		throw new Error('EXPO_PUBLIC_WS_URL is not set');
 	}
 
-	const { sessionId, memberId, memberName, exercise } = useLocalSearchParams<{
+	const { sessionId, exercise } = useLocalSearchParams<{
 		sessionId: string;
-		memberId: string;
-		memberName: string;
 		exercise: string;
 	}>();
 
@@ -34,7 +32,6 @@ export default function LiveSessionScreen() {
 		shouldReconnect: () => true,
 	});
 
-	// Update session duration every second
 	useEffect(() => {
 		const interval = setInterval(() => {
 			const now = new Date();
@@ -53,13 +50,12 @@ export default function LiveSessionScreen() {
 				type: 'session_start',
 				sessionId,
 				exercise,
-				memberId,
 			});
 		}
-	}, [webSocketState, sessionId, exercise, memberId, sendJsonMessage]);
+	}, [webSocketState, sessionId, exercise, sendJsonMessage]);
 
 	const endSession = () => {
-		Alert.alert('End Session', `Are you sure you want to end the session for ${memberName}?`, [
+		Alert.alert('End Session', 'Are you sure you want to end this session?', [
 			{ text: 'Cancel', style: 'cancel' },
 			{
 				text: 'End Session',
@@ -161,12 +157,6 @@ const styles = StyleSheet.create({
 	},
 	sessionInfo: {
 		flex: 1,
-	},
-	memberName: {
-		fontSize: 18,
-		fontWeight: 'bold',
-		color: 'white',
-		marginBottom: 4,
 	},
 	exerciseType: {
 		fontSize: 14,
